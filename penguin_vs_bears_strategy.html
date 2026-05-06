@@ -1,0 +1,626 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Nunito:wght@700;800;900&display=swap');
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --ice: #e8f4fd;
+    --ice2: #d0e8f7;
+    --deep: #1a3a5c;
+    --penguin: #1a2940;
+    --bear: #c97b3a;
+    --snow: #f0f8ff;
+    --gold: #f5c842;
+    --danger: #e05555;
+    --win: #3dba7c;
+    --cell-size: 80px;
+  }
+  body { background: transparent; font-family: 'Nunito', sans-serif; }
+  #game-wrap {
+    background: linear-gradient(160deg, #c8e8ff 0%, #e8f4fd 40%, #d4edf7 100%);
+    border-radius: 20px;
+    padding: 18px 16px 20px;
+    min-height: 520px;
+    position: relative;
+    overflow: hidden;
+  }
+  #game-wrap::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='30' cy='30' r='1.5' fill='%23ffffff' opacity='0.4'/%3E%3Ccircle cx='10' cy='10' r='1' fill='%23ffffff' opacity='0.3'/%3E%3Ccircle cx='50' cy='50' r='1' fill='%23ffffff' opacity='0.3'/%3E%3C/svg%3E") repeat;
+    pointer-events: none;
+    border-radius: 20px;
+  }
+  #hud {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+    position: relative;
+    z-index: 2;
+  }
+  .team-badge {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(255,255,255,0.75);
+    border-radius: 14px;
+    padding: 6px 14px 6px 10px;
+    backdrop-filter: blur(4px);
+    border: 1.5px solid rgba(255,255,255,0.9);
+    font-size: 13px;
+    font-weight: 800;
+    color: #1a3a5c;
+    min-width: 110px;
+  }
+  .team-badge .emoji { font-size: 22px; }
+  .team-badge .count {
+    font-size: 18px;
+    font-weight: 900;
+    min-width: 28px;
+    text-align: right;
+  }
+  .team-badge.bear-badge { flex-direction: row-reverse; }
+  .team-badge.bear-badge .count { text-align: left; }
+  #turn-indicator {
+    background: rgba(26,58,92,0.85);
+    color: #fff;
+    border-radius: 20px;
+    padding: 8px 18px;
+    font-size: 13px;
+    font-weight: 800;
+    letter-spacing: 0.3px;
+    text-align: center;
+    backdrop-filter: blur(4px);
+    border: 1.5px solid rgba(255,255,255,0.3);
+    line-height: 1.3;
+  }
+  #turn-indicator .turn-emoji { font-size: 16px; display: block; }
+  #grid-container {
+    display: flex;
+    justify-content: center;
+    position: relative;
+    z-index: 2;
+    margin-bottom: 14px;
+  }
+  #grid {
+    display: grid;
+    grid-template-columns: repeat(5, var(--cell-size));
+    grid-template-rows: repeat(4, var(--cell-size));
+    gap: 6px;
+  }
+  .cell {
+    width: var(--cell-size);
+    height: var(--cell-size);
+    border-radius: 14px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: transform 0.13s, box-shadow 0.13s, filter 0.13s;
+    position: relative;
+    user-select: none;
+    border: 2.5px solid transparent;
+    font-size: 28px;
+    font-family: 'Nunito', sans-serif;
+  }
+  .cell .unit-stack {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-content: center;
+    align-items: center;
+    gap: 2px 3px;
+    width: 100%;
+    height: 100%;
+    padding: 4px 3px;
+    box-sizing: border-box;
+  }
+  .cell .mini-icon {
+    font-size: 12px;
+    line-height: 1;
+    display: block;
+    transition: transform 0.2s;
+    filter: drop-shadow(0 1px 1px rgba(0,0,0,0.28));
+    flex: 0 0 auto;
+  }
+  .cell.penguin-cell {
+    background: linear-gradient(135deg, #2a4a7f 0%, #1a3060 100%);
+    border-color: rgba(100,160,255,0.5);
+    box-shadow: 0 3px 10px rgba(26,48,96,0.35), inset 0 1px 0 rgba(255,255,255,0.1);
+    color: #a8cfff;
+  }
+  .cell.bear-cell {
+    background: linear-gradient(135deg, #c97b3a 0%, #a55e20 100%);
+    border-color: rgba(255,180,80,0.5);
+    box-shadow: 0 3px 10px rgba(165,80,20,0.35), inset 0 1px 0 rgba(255,255,255,0.15);
+    color: #ffe0b2;
+  }
+  .cell.empty-cell {
+    background: rgba(255,255,255,0.25);
+    border-color: rgba(255,255,255,0.5);
+    box-shadow: 0 2px 6px rgba(100,150,200,0.15);
+    cursor: default;
+  }
+  .cell.selected {
+    border-color: #f5c842 !important;
+    box-shadow: 0 0 0 3px rgba(245,200,66,0.45), 0 4px 14px rgba(0,0,0,0.3) !important;
+    transform: scale(1.08) translateY(-2px);
+    z-index: 5;
+  }
+  .cell.attackable {
+    border-color: #e05555 !important;
+    box-shadow: 0 0 0 3px rgba(224,85,85,0.4), 0 4px 14px rgba(224,85,85,0.25) !important;
+    animation: pulse-red 1s infinite;
+    cursor: pointer;
+  }
+  .cell.reachable {
+    border-color: #3dba7c !important;
+    box-shadow: 0 0 0 3px rgba(61,186,124,0.4), 0 4px 14px rgba(61,186,124,0.2) !important;
+    animation: pulse-green 1s infinite;
+    cursor: pointer;
+  }
+  .cell:not(.selected):not(.empty-cell):hover {
+    transform: scale(1.05) translateY(-1px);
+    filter: brightness(1.1);
+  }
+  @keyframes pulse-red {
+    0%,100% { box-shadow: 0 0 0 3px rgba(224,85,85,0.4), 0 4px 14px rgba(224,85,85,0.25); }
+    50% { box-shadow: 0 0 0 5px rgba(224,85,85,0.6), 0 6px 18px rgba(224,85,85,0.4); }
+  }
+  @keyframes pulse-green {
+    0%,100% { box-shadow: 0 0 0 3px rgba(61,186,124,0.4), 0 4px 14px rgba(61,186,124,0.2); }
+    50% { box-shadow: 0 0 0 5px rgba(61,186,124,0.6), 0 6px 18px rgba(61,186,124,0.35); }
+  }
+  @keyframes bounce-in {
+    0% { transform: scale(0.3); opacity: 0; }
+    60% { transform: scale(1.2); opacity: 1; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  @keyframes shake {
+    0%,100% { transform: translateX(0); }
+    20% { transform: translateX(-5px) rotate(-3deg); }
+    40% { transform: translateX(5px) rotate(3deg); }
+    60% { transform: translateX(-4px) rotate(-2deg); }
+    80% { transform: translateX(4px) rotate(2deg); }
+  }
+  @keyframes victory-bounce {
+    0%,100% { transform: scale(1) translateY(0); }
+    50% { transform: scale(1.15) translateY(-4px); }
+  }
+  .cell.battle-anim { animation: shake 0.5s ease; }
+  .cell.spawn-anim .unit-stack { animation: bounce-in 0.4s cubic-bezier(0.34,1.56,0.64,1); }
+  .cell.win-anim { animation: victory-bounce 0.6s ease infinite; }
+  #message-bar {
+    background: rgba(255,255,255,0.8);
+    border-radius: 12px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 700;
+    color: #1a3a5c;
+    text-align: center;
+    border: 1.5px solid rgba(255,255,255,0.95);
+    backdrop-filter: blur(4px);
+    min-height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    position: relative;
+    z-index: 2;
+  }
+  #bottom-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-top: 12px;
+    position: relative;
+    z-index: 2;
+    gap: 8px;
+  }
+  .btn {
+    background: rgba(26,58,92,0.85);
+    color: #e8f4fd;
+    border: 1.5px solid rgba(100,160,255,0.35);
+    border-radius: 12px;
+    padding: 9px 18px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 13px;
+    font-weight: 800;
+    cursor: pointer;
+    transition: background 0.15s, transform 0.1s;
+    backdrop-filter: blur(4px);
+  }
+  .btn:hover { background: rgba(40,80,130,0.9); transform: translateY(-1px); }
+  .btn:active { transform: scale(0.97); }
+  .btn.primary {
+    background: rgba(61,186,124,0.85);
+    border-color: rgba(61,186,124,0.6);
+    color: #fff;
+  }
+  .btn.primary:hover { background: rgba(50,160,105,0.9); }
+  #difficulty-wrap {
+    display: flex; gap: 6px; align-items: center;
+  }
+  .diff-btn {
+    background: rgba(255,255,255,0.45);
+    border: 1.5px solid rgba(255,255,255,0.7);
+    border-radius: 10px;
+    padding: 6px 12px;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    color: #1a3a5c;
+    transition: background 0.15s;
+  }
+  .diff-btn.active { background: rgba(245,200,66,0.65); border-color: #f5c842; }
+  .diff-btn:hover:not(.active) { background: rgba(255,255,255,0.65); }
+  #legend {
+    display: flex; gap: 12px; align-items: center;
+    position: relative; z-index: 2;
+    margin-bottom: 10px;
+    justify-content: center;
+  }
+  .legend-item {
+    display: flex; align-items: center; gap: 5px;
+    font-size: 11px; font-weight: 700; color: #2a4a7f;
+    background: rgba(255,255,255,0.55);
+    border-radius: 8px; padding: 3px 8px;
+    border: 1px solid rgba(255,255,255,0.8);
+  }
+  .legend-dot { width: 10px; height: 10px; border-radius: 3px; }
+  #overlay {
+    position: absolute;
+    inset: 0;
+    background: rgba(10,25,50,0.82);
+    border-radius: 20px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 20;
+    backdrop-filter: blur(6px);
+    gap: 14px;
+  }
+  #overlay h2 { color: #fff; font-size: 28px; font-weight: 900; letter-spacing: 0.5px; }
+  #overlay p { color: #a8cfff; font-size: 14px; font-weight: 700; }
+  #overlay .big-emoji { font-size: 56px; }
+  .turn-flash {
+    animation: turn-announce 0.5s ease;
+  }
+  @keyframes turn-announce {
+    0% { opacity: 0; transform: scale(0.8); }
+    60% { transform: scale(1.05); }
+    100% { opacity: 1; transform: scale(1); }
+  }
+</style>
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">企鹅 vs 北极熊 策略棋盘游戏。点击己方格子选中，再点击相邻敌方格子发起进攻。</h2>
+<div id="game-wrap">
+  <div id="hud">
+    <div class="team-badge">
+      <span class="emoji">🐧</span>
+      <div>
+        <div style="font-size:11px;opacity:0.7;font-weight:700;">企鹅军团</div>
+        <span class="count" id="p-count">0</span>
+      </div>
+    </div>
+    <div id="turn-indicator">
+      <span class="turn-emoji" id="turn-emoji">🐧</span>
+      <span id="turn-text">你的回合</span>
+    </div>
+    <div class="team-badge bear-badge">
+      <span class="emoji">🐻‍❄️</span>
+      <div>
+        <div style="font-size:11px;opacity:0.7;font-weight:700;">北极熊部落</div>
+        <span class="count" id="b-count">0</span>
+      </div>
+    </div>
+  </div>
+  <div id="legend">
+    <div class="legend-item"><div class="legend-dot" style="background:#2a4a7f;"></div>己方格子</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c97b3a;"></div>敌方格子</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(245,200,66,0.7);border:1.5px solid #f5c842;"></div>已选中</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(224,85,85,0.5);border:1.5px solid #e05555;"></div>可攻击</div>
+    <div class="legend-item"><div class="legend-dot" style="background:rgba(61,186,124,0.5);border:1.5px solid #3dba7c;"></div>可移动</div>
+    <div class="legend-item" title="缓解僵局，接近原作节奏"><div class="legend-dot" style="background:#5ad4ff;border:1px solid #fff;"></div>每轮全员+1</div>
+  </div>
+  <div id="grid-container"><div id="grid"></div></div>
+  <div id="message-bar">点击你的企鹅格子开始 🐧</div>
+  <div id="bottom-bar">
+    <div id="difficulty-wrap">
+      <span style="font-size:12px;font-weight:800;color:#1a3a5c;">难度</span>
+      <button class="diff-btn active" onclick="setDiff(0)">简单</button>
+      <button class="diff-btn" onclick="setDiff(1)">普通</button>
+      <button class="diff-btn" onclick="setDiff(2)">困难</button>
+    </div>
+    <button class="btn primary" onclick="initGame()">🔄 重新开始</button>
+  </div>
+  <div id="overlay">
+    <div class="big-emoji">🐧</div>
+    <h2>企鹅 vs 北极熊</h2>
+    <p>占领所有格子即可获胜</p>
+    <p style="color:#c8e0ff;font-size:12px;">选中己方格子 → 攻击相邻敌方格子</p>
+    <p style="color:#8ab4e8;font-size:11px;max-width:280px;text-align:center;">每轮（你与北极熊各行动一次）后，所有领地兵力 +1；格内以小企鹅 / 北极熊表示数量。</p>
+    <button class="btn primary" style="margin-top:8px;font-size:15px;padding:12px 32px;" onclick="startGame()">开始游戏</button>
+  </div>
+</div>
+<script>
+const ROWS=4, COLS=5;
+/** 兵力上限：战斗结算与每轮补给共用，避免无限叠高 */
+const MAX_UNITS=12;
+let board=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
+const diffSettings=[
+  {min:1,max:3,aiStr:0.55},
+  {min:2,max:5,aiStr:0.68},
+  {min:3,max:7,aiStr:0.82}
+];
+let ds=diffSettings[0];
+
+function setDiff(d){
+  diff=d; ds=diffSettings[d];
+  document.querySelectorAll('.diff-btn').forEach((b,i)=>b.classList.toggle('active',i===d));
+  initGame();
+}
+
+function rand(a,b){return Math.floor(Math.random()*(b-a+1))+a;}
+
+function initBoard(){
+  board=[];
+  for(let r=0;r<ROWS;r++){
+    board[r]=[];
+    for(let c=0;c<COLS;c++) board[r][c]={owner:null,count:0};
+  }
+  const pCells=[[0,0],[0,1],[1,0],[ROWS-1,0],[ROWS-1,1]];
+  const bCells=[[0,COLS-1],[0,COLS-2],[1,COLS-1],[ROWS-1,COLS-1],[ROWS-1,COLS-2]];
+  pCells.forEach(([r,c])=>{ board[r][c]={owner:'penguin',count:rand(ds.min,ds.max)}; });
+  bCells.forEach(([r,c])=>{ board[r][c]={owner:'bear',count:rand(ds.min,ds.max)}; });
+  const empties=[];
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(!board[r][c].owner) empties.push([r,c]);
+  empties.sort(()=>Math.random()-0.5).slice(0,Math.floor(empties.length*0.55)).forEach(([r,c])=>{
+    board[r][c]={owner:Math.random()<0.5?'bear':'penguin',count:rand(ds.min,ds.max)};
+  });
+}
+
+function countCells(owner){ let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner===owner) n++; return n; }
+function countUnits(owner){ let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner===owner) n+=board[r][c].count; return n; }
+
+/** 每完整一轮结束（北极熊行动完毕后）全员 +1，缓解双方不敢对撞的僵局 */
+function reinforceAll(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const d=board[r][c];
+    if(d.owner && d.count>0) d.count=Math.min(d.count+1,MAX_UNITS);
+  }
+}
+
+function unitStackHtml(owner,count){
+  const icon=owner==='penguin'?'🐧':'🐻‍❄️';
+  const n=Math.min(Math.max(count,0),MAX_UNITS);
+  let html='<div class="unit-stack">';
+  for(let i=0;i<n;i++) html+=`<span class="mini-icon" aria-hidden="true">${icon}</span>`;
+  html+='</div>';
+  return html;
+}
+
+function neighbors(r,c){
+  return [[r-1,c],[r+1,c],[r,c-1],[r,c+1]].filter(([nr,nc])=>nr>=0&&nr<ROWS&&nc>=0&&nc<COLS);
+}
+
+function getAdjacentTo(owner){
+  const adj=new Set();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(board[r][c].owner===owner){
+      neighbors(r,c).forEach(([nr,nc])=>{ if(board[nr][nc].owner!==owner) adj.add(nr+','+nc); });
+    }
+  }
+  return [...adj].map(s=>s.split(',').map(Number));
+}
+
+function attack(fromR,fromC,toR,toC,isAI=false){
+  const attacker=board[fromR][fromC], defender=board[toR][toC];
+  const aCount=attacker.count, dCount=defender.count||0;
+  let aBase=aCount, dBase=dCount;
+  if(isAI && diff===2){ aBase=Math.ceil(aBase*1.15); }
+  const result=aBase-dBase;
+  const cellEl=document.querySelector(`[data-r="${toR}"][data-c="${toC}"]`);
+  cellEl.classList.add('battle-anim');
+  setTimeout(()=>cellEl.classList.remove('battle-anim'),500);
+  if(result>0){
+    board[toR][toC]={owner:attacker.owner,count:Math.min(result,MAX_UNITS)};
+    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
+    setMsg(isAI?`💥 北极熊攻占了一块领地！`:`⚔️ 进攻成功！+${result} 单位占领`);
+    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+  } else if(result<0){
+    board[toR][toC]={owner:defender.owner,count:Math.min(Math.abs(result),MAX_UNITS)};
+    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
+    setMsg(isAI?`🛡️ 企鹅成功防守！`:`🛡️ 进攻失败，防守方以 ${Math.abs(result)} 单位守住`);
+    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); },80);
+  } else {
+    board[toR][toC]={owner:null,count:0};
+    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
+    setMsg(`🤝 势均力敌，领地变为空地`);
+    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); },80);
+  }
+}
+
+function doAITurn(){
+  if(gameOver) return;
+  setMsg('🤔 北极熊正在谋划...');
+  setTimeout(()=>{
+    if(gameOver) return;
+    const bearCells=[];
+    for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner==='bear') bearCells.push([r,c]);
+    let moved=false;
+    const moves=[];
+    bearCells.forEach(([r,c])=>{
+      neighbors(r,c).forEach(([nr,nc])=>{
+        const nb=board[nr][nc];
+        if(nb.owner!=='bear'){
+          let score=board[r][c].count-((nb.count||0));
+          if(nb.owner==='penguin') score+=diff*2;
+          if(nb.owner===null) score-=1;
+          moves.push({fr:r,fc:c,tr:nr,tc:nc,score});
+        }
+      });
+    });
+    if(moves.length>0){
+      moves.sort((a,b)=>b.score-a.score);
+      const pick=Math.random()<ds.aiStr?moves[0]:moves[Math.floor(Math.random()*Math.min(moves.length,3))];
+      if(pick){
+        attack(pick.fr,pick.fc,pick.tr,pick.tc,true);
+        moved=true;
+      }
+    }
+    if(!moved) setMsg('北极熊按兵不动');
+    setTimeout(()=>{
+      if(!gameOver){
+        reinforceAll();
+        renderAll();
+        updateHUD();
+        turn='penguin';
+        updateTurnUI();
+        setMsg('轮到你了 — 点击企鹅格子行动');
+      }
+    }, 700);
+  }, aiDelay);
+}
+
+function checkWin(){
+  const pCells=countCells('penguin'), bCells=countCells('bear');
+  if(bCells===0){ endGame('penguin'); return; }
+  if(pCells===0){ endGame('bear'); return; }
+  const pAdj=getAdjacentTo('penguin').filter(([r,c])=>board[r][c].owner==='bear').length;
+  const bAdj=getAdjacentTo('bear').filter(([r,c])=>board[r][c].owner==='penguin').length;
+  if(pAdj===0 && bAdj===0) endGame(pCells>bCells?'penguin':'bear');
+}
+
+function endGame(winner){
+  gameOver=true;
+  selected=null;
+  renderAll();
+  const ov=document.getElementById('overlay');
+  ov.innerHTML=`
+    <div class="big-emoji">${winner==='penguin'?'🏆':'😢'}</div>
+    <h2 style="color:${winner==='penguin'?'#f5c842':'#e05555'}">${winner==='penguin'?'企鹅大获全胜！':'北极熊赢了...'}</h2>
+    <p style="color:#a8cfff">${winner==='penguin'?'企鹅们成功守护了冰原！':'北极熊占领了所有领地！'}</p>
+    <button class="btn primary" style="margin-top:10px;font-size:14px;padding:10px 28px;" onclick="initGame()">再来一局 🔄</button>
+  `;
+  ov.style.display='flex';
+}
+
+function setMsg(txt){ document.getElementById('message-bar').innerHTML=txt; }
+
+function updateHUD(){
+  document.getElementById('p-count').textContent=countCells('penguin');
+  document.getElementById('b-count').textContent=countCells('bear');
+}
+
+function updateTurnUI(){
+  const emoji=turn==='penguin'?'🐧':'🐻‍❄️';
+  const text=turn==='penguin'?'你的回合':'对手回合';
+  const ti=document.getElementById('turn-indicator');
+  document.getElementById('turn-emoji').textContent=emoji;
+  document.getElementById('turn-text').textContent=text;
+  ti.classList.remove('turn-flash');
+  void ti.offsetWidth;
+  ti.classList.add('turn-flash');
+}
+
+function renderCell(r,c,isNew=false){
+  const cell=document.querySelector(`[data-r="${r}"][data-c="${c}"]`);
+  if(!cell) return;
+  const d=board[r][c];
+  cell.className='cell '+(d.owner?d.owner+'-cell':'empty-cell');
+  cell.dataset.r=r; cell.dataset.c=c;
+  if(d.owner){
+    cell.innerHTML=unitStackHtml(d.owner,d.count);
+    cell.setAttribute('aria-label',d.owner==='penguin'?`企鹅 ${d.count} 只`:`北极熊 ${d.count} 只`);
+    if(isNew){ cell.classList.add('spawn-anim'); setTimeout(()=>cell.classList.remove('spawn-anim'),400); }
+  } else {
+    cell.innerHTML='';
+    cell.removeAttribute('aria-label');
+  }
+}
+
+function renderAll(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) renderCell(r,c);
+  clearHighlights();
+}
+
+function clearHighlights(){
+  document.querySelectorAll('.cell').forEach(el=>{ el.classList.remove('selected','attackable','reachable'); });
+}
+
+function handleCellClick(r,c){
+  if(gameOver || turn!=='penguin') return;
+  const d=board[r][c];
+  if(selected){
+    const [sr,sc]=selected;
+    if(sr===r && sc===c){ selected=null; clearHighlights(); setMsg('选择取消'); return; }
+    const isAdj=neighbors(sr,sc).some(([nr,nc])=>nr===r&&nc===c);
+    if(isAdj && d.owner!=='penguin'){
+      clearHighlights();
+      attack(sr,sc,r,c);
+      selected=null;
+      setTimeout(()=>{
+        if(!gameOver){ turn='bear'; updateTurnUI(); setTimeout(doAITurn,300); }
+      }, 700);
+      return;
+    }
+    if(isAdj && d.owner===null){
+      clearHighlights();
+      const src=board[sr][sc];
+      if(src.count<2){ setMsg('❄️ 至少需要 2 个单位才能扩张'); return; }
+      const mv=Math.ceil(src.count/2);
+      board[r][c]={owner:'penguin',count:mv};
+      board[sr][sc]={...src,count:src.count-mv};
+      setMsg(`📍 扩张成功，派出 ${mv} 个单位`);
+      renderCell(r,c,true); renderCell(sr,sc); updateHUD(); checkWin();
+      selected=null;
+      setTimeout(()=>{
+        if(!gameOver){ turn='bear'; updateTurnUI(); setTimeout(doAITurn,300); }
+      }, 700);
+      return;
+    }
+  }
+  if(d.owner==='penguin'){
+    selected=[r,c];
+    clearHighlights();
+    document.querySelector(`[data-r="${r}"][data-c="${c}"]`).classList.add('selected');
+    let hasTarget=false;
+    neighbors(r,c).forEach(([nr,nc])=>{
+      const nb=board[nr][nc];
+      const el=document.querySelector(`[data-r="${nr}"][data-c="${nc}"]`);
+      if(nb.owner==='bear'){ el.classList.add('attackable'); hasTarget=true; }
+      else if(nb.owner===null && d.count>=2){ el.classList.add('reachable'); hasTarget=true; }
+    });
+    setMsg(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 点击红/绿格子行动`:`❄️ 此格子无可行动目标`);
+  } else {
+    selected=null; clearHighlights();
+    if(d.owner==='bear') setMsg('⚠️ 那是敌方格子，请先选中己方格子');
+    else setMsg('点击你的企鹅格子开始 🐧');
+  }
+}
+
+function buildGrid(){
+  const g=document.getElementById('grid');
+  g.innerHTML='';
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const cell=document.createElement('div');
+    cell.className='cell empty-cell';
+    cell.dataset.r=r; cell.dataset.c=c;
+    cell.addEventListener('click',()=>handleCellClick(r,c));
+    g.appendChild(cell);
+  }
+}
+
+function initGame(){
+  gameOver=false; selected=null; turn='penguin';
+  document.getElementById('overlay').style.display='none';
+  initBoard(); buildGrid(); renderAll(); updateHUD(); updateTurnUI();
+  setMsg('点击你的企鹅格子开始 🐧');
+}
+
+function startGame(){ initGame(); }
+</script>
