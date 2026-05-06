@@ -366,9 +366,9 @@ function isTerritoryFlexibleCell(r,c){ return !HOME_ANCHOR_KEYS.has(`${r},${c}`)
 
 /** 与难度表并列的调参区（普通总兵力差、困难 AI 随回合成长） */
 const BALANCE_META={
-  hardAiRampPerFullRound:0.018,
-  hardAiRampMaxBonus:0.08,
-  hardAiStrCap:0.985
+  hardAiRampPerFullRound:0.02,
+  hardAiRampMaxBonus:0.1,
+  hardAiStrCap:0.995
 };
 
 let board=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
@@ -379,7 +379,7 @@ let fullRounds=0;
 const diffSettings=[
   {pMin:2,pMax:5,bMin:1,bMax:2,aiStr:0.28,aiAttackMult:1,emptyFill:0.48,emptyBearProb:0.1,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:0,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:0,aiBlunderRate:0.36},
   {pMin:2,pMax:5,bMin:2,bMax:5,aiStr:0.52,aiAttackMult:1.04,emptyFill:0.42,emptyBearProb:0.42,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:3,maxUnitGap:5,penguinAtkMult:1.05,penguinDefMult:1.05,aiPress:3,aiBlunderRate:0},
-  {pMin:3,pMax:6,bMin:2,bMax:4,aiStr:0.9,aiAttackMult:1.12,emptyFill:0.4,emptyBearProb:0.5,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:4,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:5,aiBlunderRate:0}
+  {pMin:3,pMax:6,bMin:2,bMax:4,aiStr:0.94,aiAttackMult:1.2,emptyFill:0.4,emptyBearProb:0.55,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:4,penguinAtkMult:1.015,penguinDefMult:1.015,aiPress:7,aiBlunderRate:0}
 ];
 let ds=diffSettings[0];
 
@@ -595,21 +595,28 @@ function snapNormalTerritoryFair(){
   snapToTerritoryTargets(Pt,Bt);
 }
 
-/** 困难：双方领地格数接近，|企鹅格−熊格|≤3（含企鹅比熊多≤3）；总兵力差由 maxUnitGap 收敛 */
+/** 困难：|企鹅格−熊格|≤3，总占地约 14～19；随机偏向熊格≥企鹅格（仍合法），总兵力由 maxUnitGap 收敛 */
 function snapHardTerritoryClose(){
   if(diff!==2) return;
   const maxGap=3;
   let Pt,Bt,tries=0;
-  while(tries++<60){
+  while(tries++<90){
     const sum=rand(14,19);
-    Pt=rand(4,sum-4);
-    Bt=sum-Pt;
-    if(Pt<3||Bt<3) continue;
-    if(Math.abs(Pt-Bt)>maxGap) continue;
-    if(Pt+Bt>ROWS*COLS) continue;
+    const candidates=[];
+    for(let p=3;p<=sum-3;p++){
+      const b=sum-p;
+      if(b<3) continue;
+      if(Math.abs(p-b)>maxGap) continue;
+      if(p+b>ROWS*COLS) continue;
+      candidates.push([p,b]);
+    }
+    if(!candidates.length) continue;
+    const bearFavored=candidates.filter(([p,b])=>b>=p);
+    const pool=(bearFavored.length&&Math.random()<0.72)?bearFavored:candidates;
+    [Pt,Bt]=pool[Math.floor(Math.random()*pool.length)];
     break;
   }
-  if(tries>60){ Pt=8; Bt=9; if(Pt+Bt>ROWS*COLS) Bt=ROWS*COLS-Pt; }
+  if(tries>90){ Pt=7; Bt=10; if(Pt+Bt>ROWS*COLS) Bt=ROWS*COLS-Pt; }
   snapToTerritoryTargets(Pt,Bt,{preferFlexibleOnly:true});
 }
 
@@ -726,7 +733,7 @@ function pickBearMove(moves){
   if(diff===1){
     return Math.random()<ds.aiStr?moves[0]:moves[Math.floor(Math.random()*Math.min(3,moves.length))];
   }
-  const s=effectiveAiStr();
+  const s=Math.min(BALANCE_META.hardAiStrCap,effectiveAiStr());
   return Math.random()<s?moves[0]:(moves.length>1?moves[1]:moves[0]);
 }
 
