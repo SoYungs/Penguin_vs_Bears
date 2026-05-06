@@ -366,21 +366,20 @@ function isTerritoryFlexibleCell(r,c){ return !HOME_ANCHOR_KEYS.has(`${r},${c}`)
 
 /** 与难度表并列的调参区（普通总兵力差、困难 AI 随回合成长） */
 const BALANCE_META={
-  normalMaxUnitGap:5,
   hardAiRampPerFullRound:0.018,
-  hardAiRampMaxBonus:0.1,
-  hardAiStrCap:0.9
+  hardAiRampMaxBonus:0.08,
+  hardAiStrCap:0.985
 };
 
 let board=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
 /** 完整回合数（你行动→熊行动→补给 计 +1），用于困难 AI 渐强 */
 let fullRounds=0;
 
-/** 各难度：…、企鹅进攻/防守战力倍率（仅玩家企鹅进攻、仅企鹅格受 AI 攻时叠乘，略降难度） */
+/** aiBlunderRate：简单专用，概率乱走/送子；aiStr：普通/简单基础选优率，困难另配合 effectiveAiStr */
 const diffSettings=[
-  {pMin:2,pMax:5,bMin:1,bMax:1,aiStr:0.22,aiAttackMult:1,emptyFill:0.55,emptyBearProb:0,minPenguinToBearUnits:2,minPenguinToBearCells:2,maxCellGap:0,maxUnitGap:0,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:0},
-  {pMin:2,pMax:5,bMin:2,bMax:5,aiStr:0.48,aiAttackMult:1.04,emptyFill:0.42,emptyBearProb:0.42,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:3,maxUnitGap:5,penguinAtkMult:1.05,penguinDefMult:1.05,aiPress:3},
-  {pMin:4,pMax:8,bMin:1,bMax:2,aiStr:0.64,aiAttackMult:1.08,emptyFill:0.38,emptyBearProb:0.58,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:0,penguinAtkMult:1.065,penguinDefMult:1.065,aiPress:5}
+  {pMin:2,pMax:5,bMin:1,bMax:2,aiStr:0.28,aiAttackMult:1,emptyFill:0.48,emptyBearProb:0.1,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:0,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:0,aiBlunderRate:0.36},
+  {pMin:2,pMax:5,bMin:2,bMax:5,aiStr:0.52,aiAttackMult:1.04,emptyFill:0.42,emptyBearProb:0.42,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:3,maxUnitGap:5,penguinAtkMult:1.05,penguinDefMult:1.05,aiPress:3,aiBlunderRate:0},
+  {pMin:3,pMax:6,bMin:2,bMax:4,aiStr:0.9,aiAttackMult:1.12,emptyFill:0.4,emptyBearProb:0.5,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:4,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:5,aiBlunderRate:0}
 ];
 let ds=diffSettings[0];
 
@@ -507,21 +506,26 @@ function snapToTerritoryTargets(Pt,Bt,opts){
   }
 }
 
-/** 简单：随机 (2b,b) 型目标 */
+/** 简单：企鹅格比熊格至少多 3（去掉原先 2 倍格数比） */
 function snapEasyTerritoryCounts(){
   if(diff!==0) return;
-  const mult=Math.max(2,Number(ds.minPenguinToBearCells)||2);
-  const maxB=Math.min(6,Math.floor((ROWS*COLS)/(mult+1)));
-  const Bt=rand(2,maxB);
-  const Pt=mult*Bt;
+  const minLead=3;
+  let Pt,Bt,tries=0;
+  while(tries++<80){
+    Bt=rand(3,7);
+    Pt=Bt+minLead+rand(0,5);
+    if(Pt+Bt>ROWS*COLS) continue;
+    if(Pt<Bt+minLead) continue;
+    break;
+  }
+  if(tries>80){ Pt=10; Bt=6; }
   snapToTerritoryTargets(Pt,Bt);
 }
 
-/** 普通：开局后总兵力 |企鹅−熊| ≤ maxUnitGap（与格子「差不多」一致） */
-function balanceNormalUnitGap(){
-  if(diff!==1) return;
-  const g=Number(ds.maxUnitGap);
-  const cap=g>0?g:BALANCE_META.normalMaxUnitGap;
+/** 开局总兵力 |企鹅−熊| ≤ maxUnitGap（普通/困难在表里配置，0 表示不调） */
+function balanceOpeningUnitGap(){
+  const cap=Number(ds.maxUnitGap)||0;
+  if(cap<=0) return;
   for(let i=0;i<500;i++){
     const Pu=countUnits('penguin'), Bu=countUnits('bear');
     if(Math.abs(Pu-Bu)<=cap) return;
@@ -591,15 +595,21 @@ function snapNormalTerritoryFair(){
   snapToTerritoryTargets(Pt,Bt);
 }
 
-/** 困难：熊格 > 企鹅格；企鹅格 4～7、领先 1～4 格；总格数不超过棋盘，兵力由 ds（企鹅厚、熊薄）在 snap 中写入 */
-function snapHardTerritoryAdvantage(){
+/** 困难：双方领地格数接近，|企鹅格−熊格|≤3（含企鹅比熊多≤3）；总兵力差由 maxUnitGap 收敛 */
+function snapHardTerritoryClose(){
   if(diff!==2) return;
-  const cap=ROWS*COLS;
-  const lead=rand(1,4);
-  let Pt=rand(4,7);
-  let Bt=Pt+lead;
-  if(Pt+Bt>cap) Bt=cap-Pt;
-  if(Bt<=Pt) Bt=Math.min(cap-Pt,Pt+1);
+  const maxGap=3;
+  let Pt,Bt,tries=0;
+  while(tries++<60){
+    const sum=rand(14,19);
+    Pt=rand(4,sum-4);
+    Bt=sum-Pt;
+    if(Pt<3||Bt<3) continue;
+    if(Math.abs(Pt-Bt)>maxGap) continue;
+    if(Pt+Bt>ROWS*COLS) continue;
+    break;
+  }
+  if(tries>60){ Pt=8; Bt=9; if(Pt+Bt>ROWS*COLS) Bt=ROWS*COLS-Pt; }
   snapToTerritoryTargets(Pt,Bt,{preferFlexibleOnly:true});
 }
 
@@ -624,9 +634,9 @@ function initBoard(){
   balanceInitialTerritoryRatio();
   if(diff===0) snapEasyTerritoryCounts();
   if(diff===1) snapNormalTerritoryFair();
-  if(diff===2) snapHardTerritoryAdvantage();
+  if(diff===2) snapHardTerritoryClose();
   balanceInitialStrength();
-  if(diff===1) balanceNormalUnitGap();
+  if(Number(ds.maxUnitGap)>0) balanceOpeningUnitGap();
 }
 
 function countCells(owner){ let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner===owner) n++; return n; }
@@ -694,6 +704,32 @@ function attack(fromR,fromC,toR,toC,isAI=false){
   }
 }
 
+/** 北极熊选步：简单易失误/送子，普通常规随机，困难高概率最优、极少次选次优 */
+function pickBearMove(moves){
+  if(!moves.length) return null;
+  moves.sort((a,b)=>b.score-a.score);
+  if(diff===0){
+    const br=Number(ds.aiBlunderRate)||0.34;
+    if(Math.random()<br){
+      const suicidal=moves.filter(m=>{
+        const ac=board[m.fr][m.fc].count;
+        const cell=board[m.tr][m.tc];
+        const dc=cell.count||0;
+        return cell.owner==='penguin'&&ac<=dc+1;
+      });
+      if(suicidal.length&&Math.random()<0.55) return suicidal[Math.floor(Math.random()*suicidal.length)];
+      const tail=Math.min(5,moves.length);
+      return moves[moves.length-tail+Math.floor(Math.random()*tail)];
+    }
+    return Math.random()<ds.aiStr?moves[0]:moves[Math.floor(Math.random()*Math.min(3,moves.length))];
+  }
+  if(diff===1){
+    return Math.random()<ds.aiStr?moves[0]:moves[Math.floor(Math.random()*Math.min(3,moves.length))];
+  }
+  const s=effectiveAiStr();
+  return Math.random()<s?moves[0]:(moves.length>1?moves[1]:moves[0]);
+}
+
 function doAITurn(){
   if(gameOver) return;
   setMsg('🤔 北极熊正在谋划...');
@@ -715,8 +751,7 @@ function doAITurn(){
       });
     });
     if(moves.length>0){
-      moves.sort((a,b)=>b.score-a.score);
-      const pick=Math.random()<effectiveAiStr()?moves[0]:moves[Math.floor(Math.random()*Math.min(moves.length,3))];
+      const pick=pickBearMove(moves);
       if(pick){
         attack(pick.fr,pick.fc,pick.tr,pick.tc,true);
         moved=true;
@@ -737,13 +772,57 @@ function doAITurn(){
   }, aiDelay);
 }
 
+/** 从企鹅领地沿「企鹅格+空地」四连通，是否还能碰到熊（有则不应因「暂时无接壤」判终局） */
+function canReachBearFromPenguinSpace(){
+  const q=[], seen=new Set();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(board[r][c].owner==='penguin'){
+      const k=`${r},${c}`; seen.add(k); q.push([r,c]);
+    }
+  }
+  while(q.length){
+    const [r,c]=q.shift();
+    for(const [nr,nc] of neighbors(r,c)){
+      const k=`${nr},${nc}`;
+      if(seen.has(k)) continue;
+      const o=board[nr][nc].owner;
+      if(o==='bear') return true;
+      if(o==='penguin'||o===null){ seen.add(k); q.push([nr,nc]); }
+    }
+  }
+  return false;
+}
+
+function canReachPenguinFromBearSpace(){
+  const q=[], seen=new Set();
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    if(board[r][c].owner==='bear'){
+      const k=`${r},${c}`; seen.add(k); q.push([r,c]);
+    }
+  }
+  while(q.length){
+    const [r,c]=q.shift();
+    for(const [nr,nc] of neighbors(r,c)){
+      const k=`${nr},${nc}`;
+      if(seen.has(k)) continue;
+      const o=board[nr][nc].owner;
+      if(o==='penguin') return true;
+      if(o==='bear'||o===null){ seen.add(k); q.push([nr,nc]); }
+    }
+  }
+  return false;
+}
+
 function checkWin(){
   const pCells=countCells('penguin'), bCells=countCells('bear');
   if(bCells===0){ endGame('penguin'); return; }
   if(pCells===0){ endGame('bear'); return; }
   const pAdj=getAdjacentTo('penguin').filter(([r,c])=>board[r][c].owner==='bear').length;
   const bAdj=getAdjacentTo('bear').filter(([r,c])=>board[r][c].owner==='penguin').length;
-  if(pAdj===0 && bAdj===0) endGame(pCells>bCells?'penguin':'bear');
+  if(pAdj===0 && bAdj===0 && pCells>0 && bCells>0){
+    if(canReachBearFromPenguinSpace()||canReachPenguinFromBearSpace()) return;
+    endGame(pCells>bCells?'penguin':'bear');
+  }
 }
 
 function endGame(winner){
