@@ -760,8 +760,8 @@ function attack(fromR,fromC,toR,toC,isAI=false){
   } else if(aCount<dEff){
     const left=dEff-aCount;
     board[toR][toC]={owner:defOwn,count:Math.min(MAX_UNITS,Math.max(1,left))};
-    board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`🛡️ 企鹅防守成功！格内还剩 ${left} 只企鹅`:`🛡️ 进攻失败，格内还剩 ${left} 只北极熊`);
+    board[fromR][fromC]={owner:null,count:0};
+    setMsg(isAI?`🛡️ 企鹅防守成功！北极熊溃退，格内还剩 ${left} 只企鹅`:`🛡️ 进攻失败，企鹅溃退，格内还剩 ${left} 只北极熊`);
     setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   } else {
     board[toR][toC]={owner:null,count:0};
