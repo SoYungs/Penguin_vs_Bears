@@ -332,7 +332,7 @@
     <div class="legend-item"><div class="legend-dot" style="background:rgba(245,200,66,0.7);border:1.5px solid #f5c842;"></div>已选中</div>
     <div class="legend-item"><div class="legend-dot" style="background:rgba(224,85,85,0.5);border:1.5px solid #e05555;"></div>可攻击</div>
     <div class="legend-item"><div class="legend-dot" style="background:rgba(61,186,124,0.5);border:1.5px solid #3dba7c;"></div>可移动</div>
-    <div class="legend-item" title="缓解僵局，接近原作节奏"><div class="legend-dot" style="background:#5ad4ff;border:1px solid #fff;"></div>每轮全员+1</div>
+    <div class="legend-item" title="本回合未动过的己方格 +1，满则溢到邻格友军"><div class="legend-dot" style="background:#5ad4ff;border:1px solid #fff;"></div>回合末补给</div>
   </div>
   <div id="grid-container"><div id="grid"></div></div>
   <div id="message-bar">点击你的企鹅格子开始 🐧</div>
@@ -350,7 +350,7 @@
     <h2>企鹅 vs 北极熊</h2>
     <p>占领所有格子即可获胜</p>
     <p style="color:#c8e0ff;font-size:12px;">选中己方格子 → 攻击相邻敌方格子</p>
-    <p style="color:#8ab4e8;font-size:11px;max-width:280px;text-align:center;">每轮（你与北极熊各行动一次）后，所有领地兵力 +1；格内以小企鹅 / 北极熊表示数量。</p>
+    <p style="color:#8ab4e8;font-size:11px;max-width:280px;text-align:center;">每轮结束后，本回合未交战、未移动的己方格子兵力 +1（满 12 则溢到相邻友格）。交战与移动只用整数加减；本回合参战格不再 +1。</p>
     <button class="btn primary" style="margin-top:8px;font-size:15px;padding:12px 32px;" onclick="startGame()">开始游戏</button>
   </div>
 </div>
@@ -374,12 +374,14 @@ const BALANCE_META={
 let board=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
 /** 完整回合数（你行动→熊行动→补给 计 +1），用于困难 AI 渐强 */
 let fullRounds=0;
+/** 本完整回合内发生过交战或移动的格子键 "r,c"，回合末 +1 补给时跳过 */
+let participated=new Set();
 
-/** aiBlunderRate：简单专用，概率乱走/送子；aiStr：普通/简单基础选优率，困难另配合 effectiveAiStr */
+/** aiBlunderRate：简单专用；战斗为纯整数，加成见 defenseBonus / hasRatioInstaWin */
 const diffSettings=[
-  {pMin:2,pMax:5,bMin:1,bMax:2,aiStr:0.28,aiAttackMult:1,emptyFill:0.48,emptyBearProb:0.1,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:0,penguinAtkMult:1.03,penguinDefMult:1.03,aiPress:0,aiBlunderRate:0.36},
-  {pMin:2,pMax:5,bMin:2,bMax:5,aiStr:0.52,aiAttackMult:1.04,emptyFill:0.42,emptyBearProb:0.42,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:3,maxUnitGap:5,penguinAtkMult:1.05,penguinDefMult:1.05,aiPress:3,aiBlunderRate:0},
-  {pMin:3,pMax:6,bMin:2,bMax:4,aiStr:0.94,aiAttackMult:1.2,emptyFill:0.4,emptyBearProb:0.55,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:4,penguinAtkMult:1.015,penguinDefMult:1.015,aiPress:7,aiBlunderRate:0}
+  {pMin:2,pMax:5,bMin:1,bMax:2,aiStr:0.28,emptyFill:0.48,emptyBearProb:0.1,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:0,aiPress:0,aiBlunderRate:0.36},
+  {pMin:2,pMax:5,bMin:2,bMax:5,aiStr:0.52,emptyFill:0.42,emptyBearProb:0.42,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:3,maxUnitGap:5,aiPress:3,aiBlunderRate:0},
+  {pMin:3,pMax:6,bMin:2,bMax:4,aiStr:0.94,emptyFill:0.4,emptyBearProb:0.55,minPenguinToBearUnits:0,minPenguinToBearCells:0,maxCellGap:0,maxUnitGap:4,aiPress:7,aiBlunderRate:0}
 ];
 let ds=diffSettings[0];
 
@@ -649,11 +651,46 @@ function initBoard(){
 function countCells(owner){ let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner===owner) n++; return n; }
 function countUnits(owner){ let n=0; for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) if(board[r][c].owner===owner) n+=board[r][c].count; return n; }
 
-/** 每完整一轮结束（北极熊行动完毕后）全员 +1，缓解双方不敢对撞的僵局 */
-function reinforceAll(){
+function markParticipated(r,c){ participated.add(`${r},${c}`); }
+function markParticipatedPair(fr,fc,tr,tc){ markParticipated(fr,fc); markParticipated(tr,tc); }
+function clearParticipated(){ participated.clear(); }
+
+/** 企鹅防守熊 +1；困难下熊守企鹅 +1 */
+function defenseBonus(defCell,attOwner){
+  const dOwn=defCell.owner;
+  if(dOwn==='penguin'&&attOwner==='bear') return 1;
+  if(diff===2&&dOwn==='bear'&&attOwner==='penguin') return 1;
+  return 0;
+}
+
+/** 攻方人数 ≥ 4×守方有效人数时碾压：简单仅企鹅攻熊；困难双方 */
+function hasRatioInstaWin(attOwner,defOwner,aCount,dEff){
+  const d=Math.max(1,dEff);
+  if(aCount<4*d) return false;
+  if(diff===0) return attOwner==='penguin'&&defOwner==='bear';
+  if(diff===1) return false;
+  return (attOwner==='penguin'&&defOwner==='bear')||(attOwner==='bear'&&defOwner==='penguin');
+}
+
+/** 满 12 的格子溢出 +1 到随机有空位的正交友格 */
+function overflowOneFromFull(r,c){
+  const own=board[r][c].owner;
+  const nbrs=neighbors(r,c).filter(([nr,nc])=>
+    !participated.has(`${nr},${nc}`)&&board[nr][nc].owner===own&&board[nr][nc].count<MAX_UNITS);
+  if(!nbrs.length) return;
+  const [nr,nc]=nbrs[Math.floor(Math.random()*nbrs.length)];
+  board[nr][nc].count++;
+}
+
+/** 回合末：未参战且非移动的己方格 +1；已满则溢出到友格 */
+function reinforceRoundGrowth(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const k=`${r},${c}`;
+    if(participated.has(k)) continue;
     const d=board[r][c];
-    if(d.owner && d.count>0) d.count=Math.min(d.count+1,MAX_UNITS);
+    if(!d.owner||d.count<1) continue;
+    if(d.count<MAX_UNITS) d.count++;
+    else overflowOneFromFull(r,c);
   }
 }
 
@@ -682,33 +719,72 @@ function getAdjacentTo(owner){
 
 function attack(fromR,fromC,toR,toC,isAI=false){
   const attacker=board[fromR][fromC], defender=board[toR][toC];
-  const aCount=attacker.count, dCount=defender.count||0;
-  let aBase=aCount, dBase=dCount;
-  const pAtk=Number(ds.penguinAtkMult)||1;
-  const pDef=Number(ds.penguinDefMult)||1;
-  if(!isAI&&attacker.owner==='penguin'&&pAtk>1){ aBase=Math.ceil(aCount*pAtk); }
-  if(isAI&&defender.owner==='penguin'&&pDef>1){ dBase=Math.ceil(dCount*pDef); }
-  if(isAI&&attacker.owner==='bear'&&ds.aiAttackMult>1){ aBase=Math.ceil(aBase*ds.aiAttackMult); }
-  const result=aBase-dBase;
+  const aCount=attacker.count, attOwn=attacker.owner;
   const cellEl=document.querySelector(`[data-r="${toR}"][data-c="${toC}"]`);
   cellEl.classList.add('battle-anim');
   setTimeout(()=>cellEl.classList.remove('battle-anim'),500);
-  if(result>0){
-    board[toR][toC]={owner:attacker.owner,count:Math.min(result,MAX_UNITS)};
-    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
-    setMsg(isAI?`💥 北极熊攻占了一块领地！`:`⚔️ 进攻成功！+${result} 单位占领`);
+
+  if(!defender.owner){
+    if(aCount<2){
+      setMsg('❄️ 至少需要 2 个单位才能移动到空地');
+      return;
+    }
+    markParticipatedPair(fromR,fromC,toR,toC);
+    board[toR][toC]={owner:attOwn,count:aCount-1};
+    board[fromR][fromC]={owner:attOwn,count:1};
+    setMsg(isAI?`🐻‍❄️ 北极熊向空地推进`:`📍 移动成功，新格 ${aCount-1} 人，原格留 1`);
     setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
-  } else if(result<0){
-    board[toR][toC]={owner:defender.owner,count:Math.min(Math.abs(result),MAX_UNITS)};
-    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
-    setMsg(isAI?`🛡️ 企鹅成功防守！`:`🛡️ 进攻失败，防守方以 ${Math.abs(result)} 单位守住`);
-    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); },80);
+    return;
+  }
+
+  const dCount=defender.count||0, defOwn=defender.owner;
+  const dEff=dCount+defenseBonus(defender,attOwn);
+
+  if(hasRatioInstaWin(attOwn,defOwn,aCount,dEff)){
+    markParticipatedPair(fromR,fromC,toR,toC);
+    const onTarget=Math.min(MAX_UNITS,Math.max(1,aCount-1));
+    board[toR][toC]={owner:attOwn,count:onTarget};
+    board[fromR][fromC]={owner:attOwn,count:1};
+    setMsg(isAI?`💥 北极熊碾压占领！`:`⚔️ 兵力碾压，无伤夺格！`);
+    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+    return;
+  }
+
+  markParticipatedPair(fromR,fromC,toR,toC);
+  if(aCount>dEff){
+    const surplus=aCount-dEff;
+    board[toR][toC]={owner:attOwn,count:Math.min(MAX_UNITS,Math.max(1,surplus))};
+    board[fromR][fromC]={owner:attOwn,count:1};
+    setMsg(isAI?`💥 北极熊攻占了一块领地！`:`⚔️ 进攻成功！守方清空，原格留 1`);
+    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+  } else if(aCount<dEff){
+    const left=dEff-aCount;
+    board[toR][toC]={owner:defOwn,count:Math.min(MAX_UNITS,Math.max(1,left))};
+    board[fromR][fromC]={owner:attOwn,count:1};
+    setMsg(isAI?`🛡️ 企鹅成功防守！`:`🛡️ 进攻失败，守方剩余 ${left}`);
+    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   } else {
     board[toR][toC]={owner:null,count:0};
-    board[fromR][fromC]={owner:attacker.owner,count:Math.max(1,Math.floor(aCount/2))};
-    setMsg(`🤝 势均力敌，领地变为空地`);
-    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); },80);
+    board[fromR][fromC]={owner:attOwn,count:1};
+    setMsg(`🤝 势均力敌，该格清空，原格留 1`);
+    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   }
+}
+
+/** 北极熊选步评分（纯整数规则，与 attack 一致） */
+function bearMoveScore(fr,fc,tr,tc){
+  const ac=board[fr][fc].count, att=board[fr][fc].owner;
+  const cell=board[tr][tc];
+  if(!cell.owner){
+    if(ac<2) return -999;
+    return 80+ac;
+  }
+  const d=cell.count||0, def=cell.owner;
+  const dEff=d+defenseBonus(cell,att);
+  if(hasRatioInstaWin(att,def,ac,dEff)) return 200+ac;
+  if(ac>dEff) return 120+(ac-dEff)*5;
+  if(ac<dEff) return -50-(dEff-ac)*4;
+  return -10;
 }
 
 /** 北极熊选步：简单易失误/送子，普通常规随机，困难高概率最优、极少次选次优 */
@@ -721,8 +797,9 @@ function pickBearMove(moves){
       const suicidal=moves.filter(m=>{
         const ac=board[m.fr][m.fc].count;
         const cell=board[m.tr][m.tc];
-        const dc=cell.count||0;
-        return cell.owner==='penguin'&&ac<=dc+1;
+        if(cell.owner!=='penguin') return false;
+        const dEff=(cell.count||0)+defenseBonus(cell,'bear');
+        return ac<=dEff;
       });
       if(suicidal.length&&Math.random()<0.55) return suicidal[Math.floor(Math.random()*suicidal.length)];
       const tail=Math.min(5,moves.length);
@@ -750,9 +827,8 @@ function doAITurn(){
       neighbors(r,c).forEach(([nr,nc])=>{
         const nb=board[nr][nc];
         if(nb.owner!=='bear'){
-          let score=board[r][c].count-((nb.count||0));
+          let score=bearMoveScore(r,c,nr,nc);
           if(nb.owner==='penguin') score+=ds.aiPress;
-          if(nb.owner===null) score-=1;
           moves.push({fr:r,fc:c,tr:nr,tc:nc,score});
         }
       });
@@ -767,7 +843,8 @@ function doAITurn(){
     if(!moved) setMsg('北极熊按兵不动');
     setTimeout(()=>{
       if(!gameOver){
-        reinforceAll();
+        reinforceRoundGrowth();
+        clearParticipated();
         renderAll();
         updateHUD();
         fullRounds++;
@@ -905,14 +982,15 @@ function handleCellClick(r,c){
       }, 700);
       return;
     }
-    if(isAdj && d.owner===null){
+    if(isAdj&&d.owner==='penguin'&&board[sr][sc].owner==='penguin'){
       clearHighlights();
-      const src=board[sr][sc];
-      if(src.count<2){ setMsg('❄️ 至少需要 2 个单位才能扩张'); return; }
-      const mv=Math.ceil(src.count/2);
-      board[r][c]={owner:'penguin',count:mv};
-      board[sr][sc]={...src,count:src.count-mv};
-      setMsg(`📍 扩张成功，派出 ${mv} 个单位`);
+      const src=board[sr][sc], dst=board[r][c];
+      const t=Math.min(src.count-1,MAX_UNITS-dst.count);
+      if(t<=0){ setMsg('❄️ 无法调动（邻格已满或己方只剩 1）'); return; }
+      markParticipatedPair(sr,sc,r,c);
+      src.count-=t;
+      dst.count+=t;
+      setMsg(`📍 已向邻格调动 ${t} 人`);
       renderCell(r,c,true); renderCell(sr,sc); updateHUD(); checkWin();
       selected=null;
       setTimeout(()=>{
@@ -931,8 +1009,12 @@ function handleCellClick(r,c){
       const el=document.querySelector(`[data-r="${nr}"][data-c="${nc}"]`);
       if(nb.owner==='bear'){ el.classList.add('attackable'); hasTarget=true; }
       else if(nb.owner===null && d.count>=2){ el.classList.add('reachable'); hasTarget=true; }
+      else if(nb.owner==='penguin'&&d.count>=2){
+        const t=Math.min(d.count-1,MAX_UNITS-nb.count);
+        if(t>0){ el.classList.add('reachable'); hasTarget=true; }
+      }
     });
-    setMsg(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 点击红/绿格子行动`:`❄️ 此格子无可行动目标`);
+    setMsg(hasTarget?`✅ 已选 ${d.count} 只 — 红攻 / 绿移空地或调友军`:`❄️ 此格子无可行动目标`);
   } else {
     selected=null; clearHighlights();
     if(d.owner==='bear') setMsg('⚠️ 那是敌方格子，请先选中己方格子');
@@ -955,6 +1037,7 @@ function buildGrid(){
 function initGame(){
   syncDifficultyFromUI();
   fullRounds=0;
+  clearParticipated();
   gameOver=false; selected=null; turn='penguin';
   document.getElementById('overlay').style.display='none';
   initBoard(); buildGrid(); renderAll(); updateHUD(); updateTurnUI();
