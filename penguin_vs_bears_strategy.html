@@ -203,20 +203,45 @@
   #message-bar {
     background: rgba(255,255,255,0.8);
     border-radius: 12px;
-    padding: 8px 14px;
+    padding: 8px 12px 9px;
     font-size: 13px;
     font-weight: 700;
     color: #1a3a5c;
     text-align: center;
     border: 1.5px solid rgba(255,255,255,0.95);
     backdrop-filter: blur(4px);
-    min-height: 36px;
+    min-height: 44px;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    gap: 6px;
+    gap: 4px;
     position: relative;
     z-index: 2;
+  }
+  #message-bar .msg-line { width: 100%; line-height: 1.35; }
+  #message-bar .msg-status { font-size: 13px; font-weight: 800; color: #1a3a5c; }
+  #message-bar .msg-detail {
+    font-size: 12px;
+    font-weight: 700;
+    color: #2d4a6e;
+    border-top: 1px dashed rgba(26,58,92,0.15);
+    padding-top: 5px;
+    margin-top: 1px;
+  }
+  #message-bar .msg-detail-ph {
+    font-size: 11px;
+    font-weight: 700;
+    color: #5a7aa8;
+    opacity: 0.85;
+  }
+  .cell.move-flash-from {
+    box-shadow: 0 0 0 3px rgba(245,200,66,0.9), 0 4px 14px rgba(245,200,66,0.35) !important;
+    z-index: 4;
+  }
+  .cell.move-flash-to {
+    box-shadow: 0 0 0 3px rgba(61,186,124,0.95), 0 4px 14px rgba(61,186,124,0.35) !important;
+    z-index: 4;
   }
   #lifetime-stats {
     display: flex; flex-wrap: wrap; align-items: center; justify-content: center;
@@ -371,6 +396,129 @@
   .rules-body ul { margin: 0 0 10px 16px; padding: 0; }
   .rules-body li { margin-bottom: 4px; }
   .rules-body strong { color: #fff; font-weight: 800; }
+  #tutorial-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 30;
+    background: rgba(6,16,36,0.92);
+    border-radius: 20px;
+    display: none;
+    align-items: center;
+    justify-content: center;
+    padding: 10px 12px;
+    backdrop-filter: blur(10px);
+  }
+  #tutorial-overlay.is-open { display: flex; }
+  .tutorial-panel {
+    background: linear-gradient(180deg,#1a3558 0%,#122438 100%);
+    border: 1.5px solid rgba(255,255,255,0.2);
+    border-radius: 18px;
+    width: 100%;
+    max-width: 440px;
+    max-height: 92%;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 16px 48px rgba(0,0,0,0.45);
+    overflow: hidden;
+  }
+  .tutorial-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+  }
+  .tutorial-head h3 {
+    margin: 0;
+    color: #fff;
+    font-size: 16px;
+    font-weight: 900;
+    letter-spacing: 0.3px;
+  }
+  .tutorial-skip {
+    background: transparent;
+    border: none;
+    color: #7aa8e0;
+    font-family: 'Nunito', sans-serif;
+    font-size: 12px;
+    font-weight: 800;
+    cursor: pointer;
+    text-decoration: underline;
+    padding: 4px 6px;
+  }
+  .tutorial-skip:hover { color: #b8d4ff; }
+  .tutorial-body {
+    padding: 12px 16px 14px;
+    overflow-y: auto;
+    flex: 1;
+    min-height: 0;
+  }
+  .tutorial-step-label {
+    font-size: 11px;
+    font-weight: 800;
+    color: #f5c842;
+    letter-spacing: 0.5px;
+    margin-bottom: 8px;
+  }
+  .tutorial-body p {
+    margin: 0 0 10px;
+    color: #c4ddf5;
+    font-size: 13px;
+    font-weight: 700;
+    line-height: 1.55;
+  }
+  .tutorial-body p:last-child { margin-bottom: 0; }
+  .tutorial-figure {
+    margin: 12px auto 14px;
+    max-width: 100%;
+    border-radius: 14px;
+    background: rgba(0,0,0,0.22);
+    border: 1px solid rgba(255,255,255,0.12);
+    padding: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+  .tutorial-figure svg { display: block; max-width: 100%; height: auto; }
+  .tutorial-foot {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px 14px;
+    padding: 12px 14px;
+    border-top: 1px solid rgba(255,255,255,0.1);
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.15);
+  }
+  .tutorial-dots {
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+    justify-content: center;
+    width: 100%;
+    order: -1;
+  }
+  .tutorial-dots span {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: rgba(255,255,255,0.22);
+    transition: background 0.15s, transform 0.15s;
+  }
+  .tutorial-dots span.on {
+    background: #f5c842;
+    transform: scale(1.15);
+  }
+  .tutorial-nav {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+  }
+  .tutorial-foot .btn { padding: 8px 16px; font-size: 12px; }
+  .tutorial-foot .btn.primary { padding: 8px 20px; }
   #bottom-actions {
     display: flex;
     justify-content: center;
@@ -420,7 +568,10 @@
     <div class="legend-item"><div class="legend-dot" style="background:rgba(61,186,124,0.5);border:1.5px solid #3dba7c;"></div>可移动</div>
   </div>
   <div id="grid-container"><div id="grid"></div></div>
-  <div id="message-bar">点击你的企鹅格子开始 🐧</div>
+  <div id="message-bar">
+    <div id="message-status" class="msg-line msg-status">点击你的企鹅格子开始 🐧</div>
+    <div id="message-detail" class="msg-line msg-detail"><span class="msg-detail-ph">上一步行动会显示在此；棋盘上金/绿高亮标出起止格</span></div>
+  </div>
   <div id="lifetime-stats" title="胜负按难度分别记录在本机；和棋不计入。换设备或清除站点数据会丢失。">
     <span class="stat-win">🐧 企鹅胜 <strong id="stat-wins">0</strong></span>
     <span class="stat-loss">🐻‍❄️ 北极熊胜 <strong id="stat-losses">0</strong></span>
@@ -444,11 +595,11 @@
     <div class="big-emoji">🐧</div>
     <h2>企鹅 vs 北极熊</h2>
     <p>你指挥企鹅方。消灭对方<strong>所有领地格</strong>即获胜；对局过长会<strong>和棋</strong>。</p>
-    <p style="color:#c8e0ff;font-size:12px;">先在下方选难度，再开局。对局中：点企鹅格选中，<strong>红框</strong>攻熊、<strong>绿框</strong>进空地或调动邻格企鹅。</p>
+    <p style="color:#c8e0ff;font-size:12px;">先在下方选难度，再点「开始游戏」：会先进入<strong>新手引导</strong>（配图分步说明，可随时跳过），再进入棋盘。对局中：点企鹅格选中，<strong>红框</strong>攻熊、<strong>绿框</strong>进空地或调动邻格企鹅。</p>
     <p style="color:#8ab4e8;font-size:11px;">详细规则、三档难度差异、战斗与补给说明 → 点「游戏说明」。</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:4px;">
       <button type="button" class="btn" onclick="toggleGameRules(true)">📖 游戏说明</button>
-      <button type="button" class="btn primary" style="font-size:15px;padding:12px 28px;" onclick="startGame()">开始游戏</button>
+      <button type="button" class="btn primary" style="font-size:15px;padding:12px 28px;" onclick="openTutorial()">开始游戏</button>
     </div>
   </div>
   <div id="rules-overlay" role="dialog" aria-modal="true" aria-labelledby="rules-title" aria-hidden="true" onclick="if(event.target===this)toggleGameRules(false)">
@@ -490,6 +641,22 @@
       </div>
     </div>
   </div>
+  <div id="tutorial-overlay" role="dialog" aria-modal="true" aria-labelledby="tutorial-title" aria-hidden="true">
+    <div class="tutorial-panel" onclick="event.stopPropagation()">
+      <div class="tutorial-head">
+        <h3 id="tutorial-title">新手引导</h3>
+        <button type="button" class="tutorial-skip" id="tutorial-skip-btn">跳过引导</button>
+      </div>
+      <div class="tutorial-body" id="tutorial-body"></div>
+      <div class="tutorial-foot">
+        <div class="tutorial-dots" id="tutorial-dots" aria-hidden="true"></div>
+        <div class="tutorial-nav">
+          <button type="button" class="btn" id="tutorial-prev-btn">上一步</button>
+          <button type="button" class="btn primary" id="tutorial-next-btn">下一步</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
 const ROWS=4, COLS=5;
@@ -516,12 +683,59 @@ function lsStatsPw(d){ return `pvb_stats_pw_${d}`; }
 function lsStatsBw(d){ return `pvb_stats_bw_${d}`; }
 /** 完整回合数超过此值判和棋（防死局） */
 const MAX_FULL_ROUNDS_STALE=110;
+const MOVE_FLASH_MS=1750;
 
 let board=[], cellEls=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
 /** 完整回合数（你行动→熊行动→补给 计 +1），用于困难 AI 渐强 */
 let fullRounds=0;
 /** 本完整回合内发生过交战或移动的格子键 "r,c"，回合末 +1 补给时跳过 */
 let participated=new Set();
+
+let flashCells=null;
+let moveFlashTimer=null;
+let gameMsgStatus='';
+let gameMsgDetail='';
+
+function repaintFlashOnly(){
+  for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
+    const el=cellEls[r]&&cellEls[r][c];
+    if(!el) continue;
+    el.classList.remove('move-flash-from','move-flash-to');
+    if(flashCells){
+      if(r===flashCells.fr&&c===flashCells.fc) el.classList.add('move-flash-from');
+      if(r===flashCells.tr&&c===flashCells.tc) el.classList.add('move-flash-to');
+    }
+  }
+}
+function flashMoveHighlight(fr,fc,tr,tc){
+  if(moveFlashTimer){ clearTimeout(moveFlashTimer); moveFlashTimer=null; }
+  flashCells={fr,fc,tr,tc};
+  repaintFlashOnly();
+  moveFlashTimer=setTimeout(()=>{
+    flashCells=null;
+    repaintFlashOnly();
+    moveFlashTimer=null;
+  },MOVE_FLASH_MS);
+}
+function applyGameMessages(){
+  const s=document.getElementById('message-status');
+  const d=document.getElementById('message-detail');
+  if(s) s.innerHTML=gameMsgStatus||'\u00A0';
+  if(d){
+    d.innerHTML=gameMsgDetail
+      ? gameMsgDetail
+      : '<span class="msg-detail-ph">上一步行动会显示在此；棋盘上金/绿高亮标出起止格</span>';
+  }
+}
+function setMsgStatus(html){
+  gameMsgStatus=html||'';
+  applyGameMessages();
+}
+/** 第二行：上一步行动说明 */
+function setMsgDetail(html){
+  gameMsgDetail=html||'';
+  applyGameMessages();
+}
 
 /** aiBlunderRate：简单专用。简单偏新手大胜；普通对称四倍斩杀+企鹅守+1；困难无斩杀、仅企鹅守+1 */
 const diffSettings=[
@@ -923,15 +1137,19 @@ function attack(fromR,fromC,toR,toC,isAI=false){
 
   if(!defender.owner){
     if(aCount<2){
-      setMsg(isAI?'❄️ 至少需要 2 只北极熊才能进入空地':'❄️ 至少需要 2 只企鹅才能移动到空地');
-      return;
+      setMsgDetail(isAI?'❄️ 至少需要 2 只北极熊才能进入空地':'❄️ 至少需要 2 只企鹅才能移动到空地');
+      return false;
     }
     markParticipatedPair(fromR,fromC,toR,toC);
     board[toR][toC]={owner:attOwn,count:aCount-1};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`🐻‍❄️ 北极熊向空地推进，新格 ${aCount-1} 只北极熊，原格留 1 只`:`📍 移动成功，新格 ${aCount-1} 只企鹅，原格留 1 只企鹅`);
-    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
-    return;
+    const dHtml=isAI?`🐻‍❄️ 北极熊向空地推进，新格 ${aCount-1} 只，原格留 1 只`:`📍 企鹅进空地，新格 ${aCount-1} 只，原格留 1 只`;
+    setMsgDetail(dHtml);
+    setTimeout(()=>{
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      flashMoveHighlight(fromR,fromC,toR,toC);
+    },80);
+    return true;
   }
 
   const dCount=defender.count||0, defOwn=defender.owner;
@@ -942,9 +1160,13 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     const onTarget=Math.min(MAX_UNITS,Math.max(1,aCount-1));
     board[toR][toC]={owner:attOwn,count:onTarget};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`💥 北极熊数量碾压，无伤占格！`:`⚔️ 企鹅数量碾压，无伤夺格！`);
-    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
-    return;
+    const dHtml=isAI?'💥 北极熊碾压，无伤占格！':'⚔️ 企鹅碾压，无伤夺格！';
+    setMsgDetail(dHtml);
+    setTimeout(()=>{
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      flashMoveHighlight(fromR,fromC,toR,toC);
+    },80);
+    return true;
   }
 
   markParticipatedPair(fromR,fromC,toR,toC);
@@ -952,25 +1174,38 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     const surplus=aCount-dEff;
     board[toR][toC]={owner:attOwn,count:Math.min(MAX_UNITS,Math.max(1,surplus))};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`💥 北极熊攻占企鹅格！格内企鹅已清空，原北极熊格留 1 只`:`⚔️ 进攻成功！该格北极熊已清空，原企鹅格留 1 只企鹅`);
-    setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+    const dHtml=isAI?'💥 北极熊攻占企鹅格！企鹅清空，原熊格留 1 只':'⚔️ 企鹅进攻成功！熊格清空，原企鹅格留 1 只';
+    setMsgDetail(dHtml);
+    setTimeout(()=>{
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      flashMoveHighlight(fromR,fromC,toR,toC);
+    },80);
   } else if(aCount<dEff){
     const left=dEff-aCount;
     board[toR][toC]={owner:defOwn,count:Math.min(MAX_UNITS,Math.max(1,left))};
     board[fromR][fromC]={owner:null,count:0};
-    let msg=isAI?`🛡️ 企鹅防守成功！北极熊溃退，格内还剩 ${left} 只企鹅`:`🛡️ 进攻失败，企鹅溃退，格内还剩 ${left} 只北极熊`;
+    let msg=isAI?`🛡️ 企鹅防守成功！北极熊溃退，格内剩 ${left} 只企鹅`:`🛡️ 企鹅进攻失败，溃退，熊格剩 ${left} 只北极熊`;
     if(!isAI&&!sessionStorage.getItem(SESSION_KEY_FAIL_ATTACK_EMPTY_TIP)){
       msg+=' <span style="opacity:0.92;font-size:12px;font-weight:700;">💡 强攻失败会空出你的出发格；进空地或打赢时原格仍留 1 只。</span>';
       try{ sessionStorage.setItem(SESSION_KEY_FAIL_ATTACK_EMPTY_TIP,'1'); }catch(e){}
     }
-    setMsg(msg);
-    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+    setMsgDetail(msg);
+    setTimeout(()=>{
+      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin();
+      flashMoveHighlight(fromR,fromC,toR,toC);
+    },80);
   } else {
     board[toR][toC]={owner:null,count:0};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(`🤝 势均力敌，该格企鹅与北极熊全部离场，原${attOwn==='penguin'?'企鹅':'北极熊'}格留 1 只${attOwn==='penguin'?'企鹅':'北极熊'}`);
-    setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
+    const tieTail=attOwn==='penguin'?'原企鹅格留 1 只企鹅':'原北极熊格留 1 只北极熊';
+    const dHtml=`🤝 势均力敌，争夺格清空，${tieTail}`;
+    setMsgDetail(dHtml);
+    setTimeout(()=>{
+      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin();
+      flashMoveHighlight(fromR,fromC,toR,toC);
+    },80);
   }
+  return true;
 }
 
 /** 北极熊选步评分（纯整数规则，与 attack 一致） */
@@ -1018,7 +1253,7 @@ function pickBearMove(moves){
 
 function doAITurn(){
   if(gameOver) return;
-  setMsg('🤔 北极熊正在谋划...');
+  setMsgStatus('🤔 北极熊正在谋划…');
   setTimeout(()=>{
     if(gameOver) return;
     const bearCells=[];
@@ -1038,11 +1273,10 @@ function doAITurn(){
     if(moves.length>0){
       const pick=pickBearMove(moves);
       if(pick){
-        attack(pick.fr,pick.fc,pick.tr,pick.tc,true);
-        moved=true;
+        if(attack(pick.fr,pick.fc,pick.tr,pick.tc,true)) moved=true;
       }
     }
-    if(!moved) setMsg('北极熊本回合未行动');
+    if(!moved) setMsgDetail('本回合北极熊没有可走的一步，棋盘未变。');
     setTimeout(()=>{
       if(!gameOver){
         reinforceRoundGrowth();
@@ -1053,7 +1287,7 @@ function doAITurn(){
         if(fullRounds>=MAX_FULL_ROUNDS_STALE){ endGameDraw(); return; }
         turn='penguin';
         updateTurnUI();
-        setMsg('轮到你了 — 点击企鹅格子行动');
+        setMsgStatus('轮到你了 — 点击企鹅格子行动');
       }
     }, 700);
   }, aiDelay);
@@ -1134,6 +1368,8 @@ function resetLifetimeStats(){
 function endGameDraw(){
   gameOver=true;
   selected=null;
+  if(moveFlashTimer){ clearTimeout(moveFlashTimer); moveFlashTimer=null; }
+  flashCells=null;
   renderAll();
   updateLifetimeStatsDisplay();
   const ov=document.getElementById('overlay');
@@ -1155,6 +1391,8 @@ function endGame(winner){
   recordGameEnd(winner);
   const cur=getStatsForDiff(diff);
   selected=null;
+  if(moveFlashTimer){ clearTimeout(moveFlashTimer); moveFlashTimer=null; }
+  flashCells=null;
   renderAll();
   updateLifetimeStatsDisplay();
   const ov=document.getElementById('overlay');
@@ -1171,8 +1409,6 @@ function endGame(winner){
   `;
   ov.style.display='flex';
 }
-
-function setMsg(txt){ document.getElementById('message-bar').innerHTML=txt; }
 
 function updateHUD(){
   document.getElementById('p-count').textContent=countCells('penguin');
@@ -1209,6 +1445,7 @@ function renderCell(r,c,isNew=false){
 function renderAll(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++) renderCell(r,c);
   clearHighlights();
+  repaintFlashOnly();
 }
 
 function clearHighlights(){
@@ -1219,17 +1456,43 @@ function clearHighlights(){
   clearGridCellTitles();
 }
 
+function restorePenguinSelectionHighlight(sr,sc){
+  const d=board[sr][sc];
+  if(d.owner!=='penguin') return;
+  selected=[sr,sc];
+  cellEls[sr][sc].classList.add('selected');
+  let hasTarget=false;
+  neighbors(sr,sc).forEach(([nr,nc])=>{
+    const nb=board[nr][nc];
+    const el=cellEls[nr][nc];
+    if(nb.owner==='bear'){ el.classList.add('attackable'); hasTarget=true; }
+    else if(nb.owner===null && d.count>=2){ el.classList.add('reachable'); hasTarget=true; }
+    else if(nb.owner==='penguin'&&d.count>=2){
+      const t=Math.min(d.count-1,MAX_UNITS-nb.count);
+      if(t>0){ el.classList.add('reachable'); hasTarget=true; }
+    }
+  });
+  setMsgStatus(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 红框攻熊 / 绿框移空地或调邻格企鹅`:`❄️ 此格没有可走的一步`);
+  setSelectionCombatTitles(sr,sc);
+}
+
 function handleCellClick(r,c){
   if(gameOver || turn!=='penguin') return;
   const d=board[r][c];
   if(selected){
     const [sr,sc]=selected;
-    if(sr===r && sc===c){ selected=null; clearHighlights(); setMsg('选择取消'); return; }
+    if(sr===r && sc===c){ selected=null; clearHighlights(); setMsgStatus('选择取消'); return; }
     const isAdj=neighbors(sr,sc).some(([nr,nc])=>nr===r&&nc===c);
     if(isAdj && d.owner!=='penguin'){
       clearHighlights();
-      attack(sr,sc,r,c);
+      const moved=attack(sr,sc,r,c);
+      if(!moved){
+        restorePenguinSelectionHighlight(sr,sc);
+        setMsgStatus('仍为你的回合 — 上一步未执行');
+        return;
+      }
       selected=null;
+      setMsgStatus('🤔 北极熊正在谋划…');
       setTimeout(()=>{
         if(!gameOver){ turn='bear'; updateTurnUI(); setTimeout(doAITurn,300); }
       }, 700);
@@ -1239,13 +1502,19 @@ function handleCellClick(r,c){
       clearHighlights();
       const src=board[sr][sc], dst=board[r][c];
       const t=Math.min(src.count-1,MAX_UNITS-dst.count);
-      if(t<=0){ setMsg('❄️ 无法调动（邻格企鹅已满 12 只，或起点只剩 1 只企鹅）'); return; }
+      if(t<=0){
+        setMsgStatus('无法调动');
+        setMsgDetail('❄️ 邻格已满 12 只或起点仅剩 1 只企鹅');
+        return;
+      }
       markParticipatedPair(sr,sc,r,c);
       src.count-=t;
       dst.count+=t;
-      setMsg(`📍 已向邻格调动 ${t} 只企鹅`);
+      setMsgDetail(`📍 已向邻格调动 ${t} 只企鹅`);
       renderCell(r,c,true); renderCell(sr,sc); updateHUD(); checkWin();
+      flashMoveHighlight(sr,sc,r,c);
       selected=null;
+      setMsgStatus('🤔 北极熊正在谋划…');
       setTimeout(()=>{
         if(!gameOver){ turn='bear'; updateTurnUI(); setTimeout(doAITurn,300); }
       }, 700);
@@ -1267,12 +1536,12 @@ function handleCellClick(r,c){
         if(t>0){ el.classList.add('reachable'); hasTarget=true; }
       }
     });
-    setMsg(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 红框攻熊 / 绿框移空地或调邻格企鹅`:`❄️ 此格没有可走的一步`);
+    setMsgStatus(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 红框攻熊 / 绿框移空地或调邻格企鹅`:`❄️ 此格没有可走的一步`);
     setSelectionCombatTitles(r,c);
   } else {
     selected=null; clearHighlights();
-    if(d.owner==='bear') setMsg('⚠️ 那是北极熊格子，请先选中企鹅格');
-    else setMsg('点击你的企鹅格子开始 🐧');
+    if(d.owner==='bear') setMsgStatus('⚠️ 那是北极熊格子，请先选中企鹅格');
+    else setMsgStatus('点击你的企鹅格子开始 🐧');
   }
 }
 
@@ -1301,19 +1570,193 @@ function toggleGameRules(open){
   el.setAttribute('aria-hidden',on?'false':'true');
 }
 
+/** 开局前新手引导（可跳过）；图示为内联 SVG */
+let tutorialStepIndex=0;
+const TUTORIAL_STEPS=[
+  {
+    title:'欢迎来到冰原战场',
+    html:`<p>你指挥<strong style="color:#8ec5ff">企鹅方</strong>，对手是<strong style="color:#ffb87a">北极熊</strong>。棋盘上有己方格、敌方格和<strong>空地</strong>。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="280" height="120" viewBox="0 0 280 120" xmlns="http://www.w3.org/2000/svg">
+  <text x="140" y="16" text-anchor="middle" fill="#8ab4e8" font-size="11" font-weight="800" font-family="Nunito,sans-serif">5×4 示意（颜色与游戏中一致）</text>
+  <g transform="translate(30,28)">
+    <rect width="44" height="44" rx="10" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2"/><text x="22" y="30" text-anchor="middle" fill="#a8cfff" font-size="20">🐧</text>
+    <rect x="52" width="44" height="44" rx="10" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2"/><text x="74" y="30" text-anchor="middle" fill="#a8cfff" font-size="18">🐧</text>
+    <rect x="104" width="44" height="44" rx="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/><text x="126" y="28" text-anchor="middle" fill="#9ec8f0" font-size="11" font-weight="800">空</text>
+    <rect x="156" width="44" height="44" rx="10" fill="#c97b3a" stroke="#ffb366" stroke-width="2"/><text x="178" y="30" text-anchor="middle" fill="#ffe0b2" font-size="20">🐻‍❄️</text>
+    <rect y="52" width="44" height="44" rx="10" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2"/><text x="22" y="82" text-anchor="middle" fill="#a8cfff" font-size="18">🐧</text>
+    <rect x="52" y="52" width="44" height="44" rx="10" fill="rgba(255,255,255,0.2)" stroke="rgba(255,255,255,0.5)" stroke-width="2"/>
+    <rect x="104" y="52" width="44" height="44" rx="10" fill="#c97b3a" stroke="#ffb366" stroke-width="2"/><text x="126" y="82" text-anchor="middle" fill="#ffe0b2" font-size="18">🐻‍❄️</text>
+  </g>
+</svg></div>
+<p><strong style="color:#fff">胜利条件：</strong>消灭对方<strong>所有领地格</strong>（对方一种颜色的格子全部消失）。若对局过长会<strong>和棋</strong>（后文说明）。</p>`
+  },
+  {
+    title:'每回合怎么操作',
+    html:`<p>轮到企鹅时：先<strong>点击你的企鹅格</strong>选中，周围邻格（上下左右）会出现提示色。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="260" height="200" viewBox="0 0 260 200" xmlns="http://www.w3.org/2000/svg">
+  <text x="130" y="18" text-anchor="middle" fill="#8ab4e8" font-size="11" font-weight="800" font-family="Nunito,sans-serif">选中（金框）· 可点邻格完成一步</text>
+  <g transform="translate(78,40)">
+    <rect width="52" height="52" rx="12" fill="rgba(255,255,255,0.15)" stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+    <rect x="62" width="52" height="52" rx="12" fill="#c97b3a" stroke="#e05555" stroke-width="3"/><text x="88" y="34" text-anchor="middle" font-size="22">🐻‍❄️</text>
+    <text x="88" y="68" text-anchor="middle" fill="#ff9999" font-size="10" font-weight="800">红框 = 攻打</text>
+    <rect y="62" width="52" height="52" rx="12" fill="#2a4a7f" stroke="#3dba7c" stroke-width="3"/><text x="26" y="96" text-anchor="middle" font-size="20">🐧</text>
+    <text x="26" y="128" text-anchor="middle" fill="#7ee0a8" font-size="10" font-weight="800">绿框 = 移动/调动</text>
+    <rect x="62" y="62" width="52" height="52" rx="12" fill="#2a4a7f" stroke="#f5c842" stroke-width="4"/><text x="88" y="96" text-anchor="middle" font-size="22">🐧</text>
+    <text x="88" y="128" text-anchor="middle" fill="#f5c842" font-size="10" font-weight="800">金框 = 已选中</text>
+    <rect x="124" y="62" width="52" height="52" rx="12" fill="rgba(255,255,255,0.15)" stroke="#3dba7c" stroke-width="3"/><text x="150" y="92" text-anchor="middle" fill="#9ec8f0" font-size="10" font-weight="800">空地</text>
+  </g>
+  <text x="130" y="188" text-anchor="middle" fill="#7aa8e0" font-size="10" font-weight="700" font-family="Nunito,sans-serif">悬停在邻格上可看浏览器提示里的结果说明</text>
+</svg></div>
+<p>再<strong>点击一个邻格</strong>完成本步：攻打北极熊、进入空地、或与邻格企鹅<strong>调动兵力</strong>。点同一格可取消选中。</p>`
+  },
+  {
+    title:'进攻时会发生什么',
+    html:`<p>攻打熊格时，系统比较<strong>你出发格的只数</strong>与对方的<strong>有效防守</strong>（格内只数 + 防守加成）。<strong>企鹅格被熊打时有效防守 +1</strong>（三难度相同）。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="280" height="150" viewBox="0 0 280 150" xmlns="http://www.w3.org/2000/svg">
+  <g font-family="Nunito,sans-serif" font-weight="800">
+    <rect x="10" y="35" width="72" height="56" rx="12" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2"/><text x="46" y="62" text-anchor="middle" fill="#fff" font-size="13">攻方 5 只</text>
+    <text x="115" y="68" fill="#f5c842" font-size="22">→</text>
+    <rect x="140" y="35" width="72" height="56" rx="12" fill="#c97b3a" stroke="#ffb366" stroke-width="2"/><text x="176" y="58" text-anchor="middle" fill="#fff" font-size="12">守 3 只</text>
+    <text x="176" y="78" text-anchor="middle" fill="#8ec5ff" font-size="10">+0 加成</text>
+    <text x="230" y="55" fill="#7ee0a8" font-size="11">5&gt;3 成功</text>
+    <text x="230" y="78" fill="#7ee0a8" font-size="10">目标余 2</text>
+  </g>
+  <text x="140" y="120" text-anchor="middle" fill="#e05555" font-size="10" font-weight="800">强攻失败：你的出发格会变空地（与进空地/打赢不同）</text>
+  <text x="140" y="138" text-anchor="middle" fill="#c4ddf5" font-size="10" font-weight="700">势均力敌：争夺格清空，你的原格仍留 1 只</text>
+</svg></div>
+<p>打赢或碾压后，<strong>原企鹅格仍会留 1 只</strong>。若兵力不足以击破防守，会<strong>溃退并空出出发格</strong>——请谨慎强攻。</p>`
+  },
+  {
+    title:'四倍碾压与难度',
+    html:`<p>当攻方只数 ≥ <strong>4×</strong>对方<strong>有效防守</strong>时，可<strong>无伤夺格</strong>，原格仍留 1 只。能否触发因难度而异：</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="300" height="130" viewBox="0 0 300 130" xmlns="http://www.w3.org/2000/svg">
+  <rect x="8" y="8" width="284" height="114" rx="10" fill="rgba(0,0,0,0.25)" stroke="rgba(255,255,255,0.1)"/>
+  <text x="20" y="32" fill="#9ec8f0" font-size="11" font-weight="800" font-family="Nunito,sans-serif">简单</text><text x="20" y="50" fill="#c4ddf5" font-size="10" font-weight="700">仅企鹅攻熊可碾压</text>
+  <text x="20" y="72" fill="#9ec8f0" font-size="11" font-weight="800">普通</text><text x="20" y="90" fill="#c4ddf5" font-size="10" font-weight="700">双方均可四倍碾压</text>
+  <text x="155" y="32" fill="#9ec8f0" font-size="11" font-weight="800">困难</text><text x="155" y="50" fill="#c4ddf5" font-size="10" font-weight="700">无四倍碾压</text>
+  <text x="155" y="78" fill="#f5c842" font-size="10" font-weight="800" font-family="Nunito,sans-serif">熊 AI 会随回合变强</text>
+  <text x="150" y="108" text-anchor="middle" fill="#8ab4e8" font-size="9" font-weight="700">开局前在底部选择难度</text>
+</svg></div>
+<p>简单模式北极熊更容易失误，适合<strong>练手</strong>；困难模式更考验每一步取舍。</p>`
+  },
+  {
+    title:'进空地与调动',
+    html:`<p>进入<strong>空地</strong>至少需要<strong>2 只</strong>企鹅：新格为「总数−1」，<strong>原格留 1</strong>。与邻格己方企鹅格可<strong>调动</strong>部分兵力（受单格上限限制）。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="270" height="110" viewBox="0 0 270 110" xmlns="http://www.w3.org/2000/svg">
+  <rect x="15" y="30" width="56" height="56" rx="12" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2"/><text x="43" y="58" text-anchor="middle" fill="#fff" font-size="12" font-weight="800">4 只</text>
+  <path d="M78 58 L115 58" stroke="#f5c842" stroke-width="3" marker-end="url(#pvbTutArrow)"/>
+  <defs><marker id="pvbTutArrow" markerWidth="8" markerHeight="8" refX="6" refY="4" orient="auto"><polygon points="0 0,8 4,0 8" fill="#f5c842"/></marker></defs>
+  <rect x="125" y="30" width="56" height="56" rx="12" fill="rgba(255,255,255,0.2)" stroke="#3dba7c" stroke-width="2"/><text x="153" y="58" text-anchor="middle" fill="#c4f5d8" font-size="11" font-weight="800">新格 3</text>
+  <text x="43" y="100" text-anchor="middle" fill="#8ec5ff" font-size="10" font-weight="700">原格留 1</text>
+  <text x="200" y="55" fill="#c4ddf5" font-size="10" font-weight="700">单格最多</text>
+  <text x="200" y="72" fill="#f5c842" font-size="14" font-weight="900">12 只</text>
+</svg></div>
+<p>格子里的小图标数量表示兵力；满了会尽量把补给溢到前线邻格（规则细节见「游戏说明」）。</p>`
+  },
+  {
+    title:'回合结束后的补给',
+    html:`<p>你下完一步、北极熊也行动完毕后，算一个<strong>完整回合</strong>结束。此时：<strong>本回合没有交战、也没有移动过</strong>的己方格，兵力 <strong>+1</strong>（已满则按规则溢出到邻格）。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="260" height="100" viewBox="0 0 260 100" xmlns="http://www.w3.org/2000/svg">
+  <rect x="20" y="25" width="60" height="56" rx="12" fill="#2a4a7f" stroke="#6a9ae8" stroke-width="2" stroke-dasharray="0"/><text x="50" y="52" text-anchor="middle" fill="#a8cfff" font-size="11" font-weight="800">未动的格</text>
+  <text x="50" y="78" text-anchor="middle" fill="#7ee0a8" font-size="18" font-weight="900">+1</text>
+  <rect x="100" y="30" width="48" height="48" rx="10" fill="rgba(255,255,255,0.12)" stroke="rgba(255,255,255,0.3)"/><text x="124" y="58" text-anchor="middle" fill="#889" font-size="20">🐧</text>
+  <text x="124" y="92" text-anchor="middle" fill="#e05555" font-size="9" font-weight="800">动过的格不加</text>
+  <text x="195" y="55" fill="#8ab4e8" font-size="10" font-weight="700">合理分配</text>
+  <text x="195" y="72" fill="#8ab4e8" font-size="10" font-weight="700">前线与后排</text>
+</svg></div>
+<p>本回合交火或挪移过的格子，双方都不会再获得这次「静止补给」。</p>`
+  },
+  {
+    title:'和棋与统计',
+    html:`<p>若完整回合数达到 <strong>${MAX_FULL_ROUNDS_STALE}</strong> 仍未歼灭对方全部领地，判<strong>和棋</strong>（不计入底部胜负统计）。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="240" height="88" viewBox="0 0 240 88" xmlns="http://www.w3.org/2000/svg">
+  <text x="120" y="28" text-anchor="middle" fill="#8ab4e8" font-size="12" font-weight="900" font-family="Nunito,sans-serif">⏱ 回合上限 · 和棋</text>
+  <text x="120" y="52" text-anchor="middle" fill="#c4ddf5" font-size="11" font-weight="700">防长时间僵持无结果</text>
+  <text x="120" y="76" text-anchor="middle" fill="#7aa8e0" font-size="10" font-weight="700">简 / 普 / 困 分开累计胜场</text>
+</svg></div>
+<p>更多细则（例如溢出优先级）随时可点<strong>「游戏说明」</strong>查阅。</p>`
+  },
+  {
+    title:'开始对战',
+    html:`<p>你已经了解基本流程。请确认底部<strong>难度</strong>（简单 / 普通 / 困难），然后点击下方<strong>开始对战</strong>进入棋盘。</p>
+<div class="tutorial-figure" aria-hidden="true"><svg width="220" height="100" viewBox="0 0 220 100" xmlns="http://www.w3.org/2000/svg">
+  <text x="110" y="38" text-anchor="middle" fill="#fff" font-size="22" font-weight="900" font-family="Nunito,sans-serif">🐧 VS 🐻‍❄️</text>
+  <text x="110" y="68" text-anchor="middle" fill="#f5c842" font-size="13" font-weight="800">祝好运！</text>
+</svg></div>
+<p>对局中仍可打开「游戏说明」复习全文。</p>`
+  }
+];
+
+function toggleTutorial(open){
+  const el=document.getElementById('tutorial-overlay');
+  if(!el) return;
+  const on=!!open;
+  el.classList.toggle('is-open',on);
+  el.setAttribute('aria-hidden',on?'false':'true');
+}
+
+function renderTutorialDots(){
+  const box=document.getElementById('tutorial-dots');
+  if(!box) return;
+  box.innerHTML=TUTORIAL_STEPS.map((_,i)=>
+    `<span class="${i===tutorialStepIndex?'on':''}" title=""></span>`
+  ).join('');
+}
+
+function showTutorialStep(){
+  const step=TUTORIAL_STEPS[tutorialStepIndex];
+  const body=document.getElementById('tutorial-body');
+  const titleEl=document.getElementById('tutorial-title');
+  const prevBtn=document.getElementById('tutorial-prev-btn');
+  const nextBtn=document.getElementById('tutorial-next-btn');
+  if(!body||!step) return;
+  const n=TUTORIAL_STEPS.length;
+  titleEl.textContent=step.title;
+  body.innerHTML=`<div class="tutorial-step-label">第 ${tutorialStepIndex+1} / ${n} 步</div>${step.html}`;
+  if(prevBtn) prevBtn.style.visibility=tutorialStepIndex>0?'visible':'hidden';
+  if(nextBtn) nextBtn.textContent=tutorialStepIndex>=n-1?'开始对战':'下一步';
+  renderTutorialDots();
+}
+
+function openTutorial(){
+  tutorialStepIndex=0;
+  showTutorialStep();
+  toggleTutorial(true);
+}
+
+function closeTutorialAndStart(){
+  toggleTutorial(false);
+  initGame();
+}
+
+function tutorialNext(){
+  if(tutorialStepIndex>=TUTORIAL_STEPS.length-1){ closeTutorialAndStart(); return; }
+  tutorialStepIndex++;
+  showTutorialStep();
+}
+
+function tutorialPrev(){
+  if(tutorialStepIndex<=0) return;
+  tutorialStepIndex--;
+  showTutorialStep();
+}
+
 function initGame(){
   syncDifficultyFromUI();
   fullRounds=0;
   clearParticipated();
   gameOver=false; selected=null; turn='penguin';
   toggleGameRules(false);
+  toggleTutorial(false);
   document.getElementById('overlay').style.display='none';
+  if(moveFlashTimer){ clearTimeout(moveFlashTimer); moveFlashTimer=null; }
+  flashCells=null;
   initBoard(); buildGrid(); renderAll(); updateHUD(); updateTurnUI();
   updateLifetimeStatsDisplay();
-  setMsg('点击你的企鹅格子开始 🐧');
+  gameMsgDetail='';
+  setMsgStatus('点击你的企鹅格子开始 🐧');
+  applyGameMessages();
 }
-
-function startGame(){ initGame(); }
 
 updateLifetimeStatsDisplay();
 (function bindStatReset(){
@@ -1325,6 +1768,14 @@ updateLifetimeStatsDisplay();
   const cb=document.getElementById('rules-close-btn');
   if(ob) ob.addEventListener('click',()=>toggleGameRules(true));
   if(cb) cb.addEventListener('click',()=>toggleGameRules(false));
+})();
+(function bindTutorialUi(){
+  const skip=document.getElementById('tutorial-skip-btn');
+  const prev=document.getElementById('tutorial-prev-btn');
+  const next=document.getElementById('tutorial-next-btn');
+  if(skip) skip.addEventListener('click',closeTutorialAndStart);
+  if(prev) prev.addEventListener('click',tutorialPrev);
+  if(next) next.addEventListener('click',tutorialNext);
 })();
 </script>
 </body>
