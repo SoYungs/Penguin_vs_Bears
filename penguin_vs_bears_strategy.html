@@ -304,7 +304,7 @@
 </style>
 </head>
 <body>
-<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">企鹅 vs 北极熊 策略棋盘游戏。点击己方格子选中，再点击相邻敌方格子发起进攻。</h2>
+<h2 class="sr-only" style="position:absolute;width:1px;height:1px;overflow:hidden;">企鹅 vs 北极熊 策略棋盘游戏。点击企鹅方格子选中，再点击相邻北极熊格子发起进攻。</h2>
 <div id="game-wrap">
   <div id="hud">
     <div class="team-badge">
@@ -327,12 +327,12 @@
     </div>
   </div>
   <div id="legend">
-    <div class="legend-item"><div class="legend-dot" style="background:#2a4a7f;"></div>己方格子</div>
-    <div class="legend-item"><div class="legend-dot" style="background:#c97b3a;"></div>敌方格子</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#2a4a7f;"></div>企鹅方格子</div>
+    <div class="legend-item"><div class="legend-dot" style="background:#c97b3a;"></div>北极熊格子</div>
     <div class="legend-item"><div class="legend-dot" style="background:rgba(245,200,66,0.7);border:1.5px solid #f5c842;"></div>已选中</div>
     <div class="legend-item"><div class="legend-dot" style="background:rgba(224,85,85,0.5);border:1.5px solid #e05555;"></div>可攻击</div>
     <div class="legend-item"><div class="legend-dot" style="background:rgba(61,186,124,0.5);border:1.5px solid #3dba7c;"></div>可移动</div>
-    <div class="legend-item" title="本回合未动过的己方格 +1，满则溢到邻格友军"><div class="legend-dot" style="background:#5ad4ff;border:1px solid #fff;"></div>回合末补给</div>
+    <div class="legend-item" title="每阵营分别结算：本回合未交战、未移动的企鹅格群内企鹅 +1；北极熊格群内北极熊同样 +1。满 12 只则溢到同阵营、仍有空位的邻格；本回合动过的格不补"><div class="legend-dot" style="background:#5ad4ff;border:1px solid #fff;"></div>回合末补给</div>
   </div>
   <div id="grid-container"><div id="grid"></div></div>
   <div id="message-bar">点击你的企鹅格子开始 🐧</div>
@@ -348,15 +348,15 @@
   <div id="overlay">
     <div class="big-emoji">🐧</div>
     <h2>企鹅 vs 北极熊</h2>
-    <p>占领所有格子即可获胜</p>
-    <p style="color:#c8e0ff;font-size:12px;">选中己方格子 → 攻击相邻敌方格子</p>
-    <p style="color:#8ab4e8;font-size:11px;max-width:280px;text-align:center;">每轮结束后，本回合未交战、未移动的己方格子兵力 +1（满 12 则溢到相邻友格）。交战与移动只用整数加减；本回合参战格不再 +1。</p>
+    <p>棋盘上只剩企鹅格或只剩北极熊格时对应一方获胜</p>
+    <p style="color:#c8e0ff;font-size:12px;">选中企鹅格 → 攻击相邻北极熊格</p>
+    <p style="color:#8ab4e8;font-size:11px;max-width:300px;text-align:center;">每轮结束后：本回合未交战、未移动的企鹅格群内企鹅 +1，北极熊格群内北极熊同样 +1（满 12 只溢到同阵营仍有空位的邻格）。交战与移动只用整数加减；本回合行动过的格子双方都不再 +1。</p>
     <button class="btn primary" style="margin-top:8px;font-size:15px;padding:12px 32px;" onclick="startGame()">开始游戏</button>
   </div>
 </div>
 <script>
 const ROWS=4, COLS=5;
-/** 兵力上限：战斗结算与每轮补给共用，避免无限叠高 */
+/** 单格企鹅/北极熊只数上限：战斗结算与每轮补给共用 */
 const MAX_UNITS=12;
 /** 老家锚点格：困难下领地 snap 只动非锚点，保留左右两翼 */
 const HOME_P_ANCHORS=[[0,0],[0,1],[1,0],[ROWS-1,0],[ROWS-1,1]];
@@ -364,7 +364,7 @@ const HOME_B_ANCHORS=[[0,COLS-1],[0,COLS-2],[1,COLS-1],[ROWS-1,COLS-1],[ROWS-1,C
 const HOME_ANCHOR_KEYS=new Set([...HOME_P_ANCHORS,...HOME_B_ANCHORS].map(([r,c])=>`${r},${c}`));
 function isTerritoryFlexibleCell(r,c){ return !HOME_ANCHOR_KEYS.has(`${r},${c}`); }
 
-/** 与难度表并列的调参区（普通总兵力差、困难 AI 随回合成长） */
+/** 与难度表并列的调参区（普通双方总只数差、困难 AI 随回合成长） */
 const BALANCE_META={
   hardAiRampPerFullRound:0.02,
   hardAiRampMaxBonus:0.1,
@@ -524,7 +524,7 @@ function snapEasyTerritoryCounts(){
   snapToTerritoryTargets(Pt,Bt);
 }
 
-/** 开局总兵力 |企鹅−熊| ≤ maxUnitGap（普通/困难在表里配置，0 表示不调） */
+/** 开局双方总只数 |企鹅−熊| ≤ maxUnitGap（普通/困难在表里配置，0 表示不调） */
 function balanceOpeningUnitGap(){
   const cap=Number(ds.maxUnitGap)||0;
   if(cap<=0) return;
@@ -597,7 +597,7 @@ function snapNormalTerritoryFair(){
   snapToTerritoryTargets(Pt,Bt);
 }
 
-/** 困难：|企鹅格−熊格|≤3，总占地约 14～19；随机偏向熊格≥企鹅格（仍合法），总兵力由 maxUnitGap 收敛 */
+/** 困难：|企鹅格−熊格|≤3，总占地约 14～19；随机偏向熊格≥企鹅格（仍合法），总只数由 maxUnitGap 收敛 */
 function snapHardTerritoryClose(){
   if(diff!==2) return;
   const maxGap=3;
@@ -663,7 +663,7 @@ function defenseBonus(defCell,attOwner){
   return 0;
 }
 
-/** 攻方人数 ≥ 4×守方有效人数时碾压：简单仅企鹅攻熊；困难双方 */
+/** 攻方只数 ≥ 4×防守方有效只数时碾压：简单仅企鹅攻熊；困难双方 */
 function hasRatioInstaWin(attOwner,defOwner,aCount,dEff){
   const d=Math.max(1,dEff);
   if(aCount<4*d) return false;
@@ -682,7 +682,7 @@ function overflowOneFromFull(r,c){
   board[nr][nc].count++;
 }
 
-/** 回合末：未参战且非移动的己方格 +1；已满则溢出到友格 */
+/** 回合末：未参战且非移动的己方格 +1 只；已满则溢出到有空位的友方同阵营格 */
 function reinforceRoundGrowth(){
   for(let r=0;r<ROWS;r++) for(let c=0;c<COLS;c++){
     const k=`${r},${c}`;
@@ -726,13 +726,13 @@ function attack(fromR,fromC,toR,toC,isAI=false){
 
   if(!defender.owner){
     if(aCount<2){
-      setMsg('❄️ 至少需要 2 个单位才能移动到空地');
+      setMsg(isAI?'❄️ 至少需要 2 只北极熊才能进入空地':'❄️ 至少需要 2 只企鹅才能移动到空地');
       return;
     }
     markParticipatedPair(fromR,fromC,toR,toC);
     board[toR][toC]={owner:attOwn,count:aCount-1};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`🐻‍❄️ 北极熊向空地推进`:`📍 移动成功，新格 ${aCount-1} 人，原格留 1`);
+    setMsg(isAI?`🐻‍❄️ 北极熊向空地推进，新格 ${aCount-1} 只北极熊，原格留 1 只`:`📍 移动成功，新格 ${aCount-1} 只企鹅，原格留 1 只企鹅`);
     setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
     return;
   }
@@ -745,7 +745,7 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     const onTarget=Math.min(MAX_UNITS,Math.max(1,aCount-1));
     board[toR][toC]={owner:attOwn,count:onTarget};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`💥 北极熊碾压占领！`:`⚔️ 兵力碾压，无伤夺格！`);
+    setMsg(isAI?`💥 北极熊数量碾压，无伤占格！`:`⚔️ 企鹅数量碾压，无伤夺格！`);
     setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
     return;
   }
@@ -755,18 +755,18 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     const surplus=aCount-dEff;
     board[toR][toC]={owner:attOwn,count:Math.min(MAX_UNITS,Math.max(1,surplus))};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`💥 北极熊攻占了一块领地！`:`⚔️ 进攻成功！守方清空，原格留 1`);
+    setMsg(isAI?`💥 北极熊攻占企鹅格！格内企鹅已清空，原北极熊格留 1 只`:`⚔️ 进攻成功！该格北极熊已清空，原企鹅格留 1 只企鹅`);
     setTimeout(()=>{ renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   } else if(aCount<dEff){
     const left=dEff-aCount;
     board[toR][toC]={owner:defOwn,count:Math.min(MAX_UNITS,Math.max(1,left))};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(isAI?`🛡️ 企鹅成功防守！`:`🛡️ 进攻失败，守方剩余 ${left}`);
+    setMsg(isAI?`🛡️ 企鹅防守成功！格内还剩 ${left} 只企鹅`:`🛡️ 进攻失败，格内还剩 ${left} 只北极熊`);
     setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   } else {
     board[toR][toC]={owner:null,count:0};
     board[fromR][fromC]={owner:attOwn,count:1};
-    setMsg(`🤝 势均力敌，该格清空，原格留 1`);
+    setMsg(`🤝 势均力敌，该格企鹅与北极熊全部离场，原${attOwn==='penguin'?'企鹅':'北极熊'}格留 1 只${attOwn==='penguin'?'企鹅':'北极熊'}`);
     setTimeout(()=>{ renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin(); },80);
   }
 }
@@ -840,7 +840,7 @@ function doAITurn(){
         moved=true;
       }
     }
-    if(!moved) setMsg('北极熊按兵不动');
+    if(!moved) setMsg('北极熊本回合未行动');
     setTimeout(()=>{
       if(!gameOver){
         reinforceRoundGrowth();
@@ -917,7 +917,7 @@ function endGame(winner){
   ov.innerHTML=`
     <div class="big-emoji">${winner==='penguin'?'🏆':'😢'}</div>
     <h2 style="color:${winner==='penguin'?'#f5c842':'#e05555'}">${winner==='penguin'?'企鹅大获全胜！':'北极熊赢了...'}</h2>
-    <p style="color:#a8cfff">${winner==='penguin'?'小企鹅们成功守护了冰原！':'北极熊占领了所有领地！'}</p>
+    <p style="color:#a8cfff">${winner==='penguin'?'小企鹅们成功守护了冰原！':'棋盘上已无企鹅格，北极熊获胜！'}</p>
     <button class="btn primary" style="margin-top:10px;font-size:14px;padding:10px 28px;" onclick="initGame()">再来一局 🔄</button>
   `;
   ov.style.display='flex';
@@ -986,11 +986,11 @@ function handleCellClick(r,c){
       clearHighlights();
       const src=board[sr][sc], dst=board[r][c];
       const t=Math.min(src.count-1,MAX_UNITS-dst.count);
-      if(t<=0){ setMsg('❄️ 无法调动（邻格已满或己方只剩 1）'); return; }
+      if(t<=0){ setMsg('❄️ 无法调动（邻格企鹅已满 12 只，或起点只剩 1 只企鹅）'); return; }
       markParticipatedPair(sr,sc,r,c);
       src.count-=t;
       dst.count+=t;
-      setMsg(`📍 已向邻格调动 ${t} 人`);
+      setMsg(`📍 已向邻格调动 ${t} 只企鹅`);
       renderCell(r,c,true); renderCell(sr,sc); updateHUD(); checkWin();
       selected=null;
       setTimeout(()=>{
@@ -1014,10 +1014,10 @@ function handleCellClick(r,c){
         if(t>0){ el.classList.add('reachable'); hasTarget=true; }
       }
     });
-    setMsg(hasTarget?`✅ 已选 ${d.count} 只 — 红攻 / 绿移空地或调友军`:`❄️ 此格子无可行动目标`);
+    setMsg(hasTarget?`✅ 已选 ${d.count} 只企鹅 — 红框攻熊 / 绿框移空地或调邻格企鹅`:`❄️ 此格没有可走的一步`);
   } else {
     selected=null; clearHighlights();
-    if(d.owner==='bear') setMsg('⚠️ 那是敌方格子，请先选中己方格子');
+    if(d.owner==='bear') setMsg('⚠️ 那是北极熊格子，请先选中企鹅格');
     else setMsg('点击你的企鹅格子开始 🐧');
   }
 }
