@@ -572,7 +572,7 @@
     <div id="message-status" class="msg-line msg-status">点击你的企鹅格子开始 🐧</div>
     <div id="message-detail" class="msg-line msg-detail"><span class="msg-detail-ph">上一步行动会显示在此；棋盘上金/绿高亮标出起止格</span></div>
   </div>
-  <div id="lifetime-stats" title="胜负按难度分别记录在本机；和棋不计入。换设备或清除站点数据会丢失。">
+  <div id="lifetime-stats" title="胜负按难度分别记录在本机。换设备或清除站点数据会丢失。">
     <span class="stat-win">🐧 企鹅胜 <strong id="stat-wins">0</strong></span>
     <span class="stat-loss">🐻‍❄️ 北极熊胜 <strong id="stat-losses">0</strong></span>
     <span class="stat-total">合计 <strong id="stat-total">0</strong> 局</span>
@@ -594,7 +594,7 @@
   <div id="overlay">
     <div class="big-emoji">🐧</div>
     <h2>企鹅 vs 北极熊</h2>
-    <p>你指挥企鹅方。消灭对方<strong>所有领地格</strong>即获胜；对局过长会<strong>和棋</strong>。</p>
+    <p>你指挥企鹅方。消灭对方<strong>所有领地格</strong>即获胜。</p>
     <p style="color:#c8e0ff;font-size:12px;">先在下方选难度，再点「开始游戏」：会先进入<strong>新手引导</strong>（配图分步说明，可随时跳过），再进入棋盘。对局中：点企鹅格选中，<strong>红框</strong>攻熊、<strong>绿框</strong>进空地或调动邻格企鹅。</p>
     <p style="color:#8ab4e8;font-size:11px;">详细规则、三档难度差异、战斗与补给说明 → 点「游戏说明」。</p>
     <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;align-items:center;margin-top:4px;">
@@ -609,8 +609,8 @@
         <button type="button" class="btn" id="rules-close-btn">关闭</button>
       </div>
       <div class="rules-body">
-        <h4>胜负与和棋</h4>
-        <p>棋盘上<strong>没有北极熊格</strong>则企鹅胜；<strong>没有企鹅格</strong>则北极熊胜。若完整回合数达到 <strong>110</strong> 仍未歼灭对方领地，判<strong>和棋</strong>（不计入本机胜负统计）。</p>
+        <h4>胜负</h4>
+        <p>棋盘上<strong>没有北极熊格</strong>则企鹅胜；<strong>没有企鹅格</strong>则北极熊胜。</p>
         <h4>基本操作</h4>
         <ul>
           <li>你的回合点击<strong>己方企鹅格</strong>选中。</li>
@@ -637,7 +637,7 @@
         <h4>回合末补给</h4>
         <p>每个完整回合结束后：本回合<strong>未交战且未移动</strong>的己方格，该格同阵营兵力 <strong>+1</strong>；已满 12 则尽量溢到仍有空位的<strong>同阵营邻格</strong>（略优先更靠前线的邻格）。本回合行动过的格子双方都不再 +1。</p>
         <h4>本机统计</h4>
-        <p>底部显示当前难度的累计胜场，以及简 / 普 / 困分列统计；和棋不计入。可用「清零」清除（含旧版合并数据）。</p>
+        <p>底部显示当前难度的累计胜场，以及简 / 普 / 困分列统计。可用「清零」清除（含旧版合并数据）。</p>
       </div>
     </div>
   </div>
@@ -681,8 +681,6 @@ const LS_STATS_LEGACY_P='pvb_stats_penguin_wins';
 const LS_STATS_LEGACY_B='pvb_stats_bear_wins';
 function lsStatsPw(d){ return `pvb_stats_pw_${d}`; }
 function lsStatsBw(d){ return `pvb_stats_bw_${d}`; }
-/** 完整回合数超过此值判和棋（防死局） */
-const MAX_FULL_ROUNDS_STALE=110;
 const MOVE_FLASH_MS=1750;
 
 let board=[], cellEls=[], selected=null, turn='penguin', gameOver=false, diff=0, aiDelay=600;
@@ -1145,8 +1143,11 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     board[fromR][fromC]={owner:attOwn,count:1};
     const dHtml=isAI?`🐻‍❄️ 北极熊向空地推进，新格 ${aCount-1} 只，原格留 1 只`:`📍 企鹅进空地，新格 ${aCount-1} 只，原格留 1 只`;
     setMsgDetail(dHtml);
+    updateHUD();
+    checkWin();
     setTimeout(()=>{
-      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD();
+      if(!gameOver) checkWin();
       flashMoveHighlight(fromR,fromC,toR,toC);
     },80);
     return true;
@@ -1162,8 +1163,11 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     board[fromR][fromC]={owner:attOwn,count:1};
     const dHtml=isAI?'💥 北极熊碾压，无伤占格！':'⚔️ 企鹅碾压，无伤夺格！';
     setMsgDetail(dHtml);
+    updateHUD();
+    checkWin();
     setTimeout(()=>{
-      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD();
+      if(!gameOver) checkWin();
       flashMoveHighlight(fromR,fromC,toR,toC);
     },80);
     return true;
@@ -1176,8 +1180,11 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     board[fromR][fromC]={owner:attOwn,count:1};
     const dHtml=isAI?'💥 北极熊攻占企鹅格！企鹅清空，原熊格留 1 只':'⚔️ 企鹅进攻成功！熊格清空，原企鹅格留 1 只';
     setMsgDetail(dHtml);
+    updateHUD();
+    checkWin();
     setTimeout(()=>{
-      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD(); checkWin();
+      renderCell(toR,toC,true); renderCell(fromR,fromC); updateHUD();
+      if(!gameOver) checkWin();
       flashMoveHighlight(fromR,fromC,toR,toC);
     },80);
   } else if(aCount<dEff){
@@ -1190,8 +1197,11 @@ function attack(fromR,fromC,toR,toC,isAI=false){
       try{ sessionStorage.setItem(SESSION_KEY_FAIL_ATTACK_EMPTY_TIP,'1'); }catch(e){}
     }
     setMsgDetail(msg);
+    updateHUD();
+    checkWin();
     setTimeout(()=>{
-      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin();
+      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD();
+      if(!gameOver) checkWin();
       flashMoveHighlight(fromR,fromC,toR,toC);
     },80);
   } else {
@@ -1200,8 +1210,11 @@ function attack(fromR,fromC,toR,toC,isAI=false){
     const tieTail=attOwn==='penguin'?'原企鹅格留 1 只企鹅':'原北极熊格留 1 只北极熊';
     const dHtml=`🤝 势均力敌，争夺格清空，${tieTail}`;
     setMsgDetail(dHtml);
+    updateHUD();
+    checkWin();
     setTimeout(()=>{
-      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD(); checkWin();
+      renderCell(toR,toC); renderCell(fromR,fromC); updateHUD();
+      if(!gameOver) checkWin();
       flashMoveHighlight(fromR,fromC,toR,toC);
     },80);
   }
@@ -1284,7 +1297,6 @@ function doAITurn(){
         renderAll();
         updateHUD();
         fullRounds++;
-        if(fullRounds>=MAX_FULL_ROUNDS_STALE){ endGameDraw(); return; }
         turn='penguin';
         updateTurnUI();
         setMsgStatus('轮到你了 — 点击企鹅格子行动');
@@ -1294,6 +1306,7 @@ function doAITurn(){
 }
 
 function checkWin(){
+  if(gameOver) return;
   if(countCells('bear')===0){ endGame('penguin'); return; }
   if(countCells('penguin')===0){ endGame('bear'); return; }
 }
@@ -1365,28 +1378,8 @@ function resetLifetimeStats(){
   updateLifetimeStatsDisplay();
 }
 
-function endGameDraw(){
-  gameOver=true;
-  selected=null;
-  if(moveFlashTimer){ clearTimeout(moveFlashTimer); moveFlashTimer=null; }
-  flashCells=null;
-  renderAll();
-  updateLifetimeStatsDisplay();
-  const ov=document.getElementById('overlay');
-  ov.innerHTML=`
-    <div class="big-emoji">🤝</div>
-    <h2 style="color:#8ab4e8;">和棋</h2>
-    <p style="color:#a8cfff;max-width:300px;text-align:center;">对局已超过 ${MAX_FULL_ROUNDS_STALE} 个完整回合，双方仍未歼灭对方领地，判为和棋。</p>
-    <p style="color:#8ab4e8;font-size:12px;font-weight:700;margin-top:4px;">当前难度本局不计入胜负统计 · ${formatStatsLine()}</p>
-    <div style="display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin-top:12px;">
-      <button type="button" class="btn" onclick="toggleGameRules(true)">📖 游戏说明</button>
-      <button type="button" class="btn primary" style="font-size:14px;padding:10px 28px;" onclick="initGame()">再来一局 🔄</button>
-    </div>
-  `;
-  ov.style.display='flex';
-}
-
 function endGame(winner){
+  if(gameOver) return;
   gameOver=true;
   recordGameEnd(winner);
   const cur=getStatsForDiff(diff);
@@ -1588,7 +1581,7 @@ const TUTORIAL_STEPS=[
     <rect x="104" y="52" width="44" height="44" rx="10" fill="#c97b3a" stroke="#ffb366" stroke-width="2"/><text x="126" y="82" text-anchor="middle" fill="#ffe0b2" font-size="18">🐻‍❄️</text>
   </g>
 </svg></div>
-<p><strong style="color:#fff">胜利条件：</strong>消灭对方<strong>所有领地格</strong>（对方一种颜色的格子全部消失）。若对局过长会<strong>和棋</strong>（后文说明）。</p>`
+<p><strong style="color:#fff">胜利条件：</strong>消灭对方<strong>所有领地格</strong>（对方一种颜色的格子全部消失）。</p>`
   },
   {
     title:'每回合怎么操作',
@@ -1667,12 +1660,12 @@ const TUTORIAL_STEPS=[
 <p>本回合交火或挪移过的格子，双方都不会再获得这次「静止补给」。</p>`
   },
   {
-    title:'和棋与统计',
-    html:`<p>若完整回合数达到 <strong>${MAX_FULL_ROUNDS_STALE}</strong> 仍未歼灭对方全部领地，判<strong>和棋</strong>（不计入底部胜负统计）。</p>
+    title:'本机统计',
+    html:`<p>底部栏会显示当前难度下你的<strong>企鹅胜场</strong>与<strong>北极熊胜场</strong>，以及简 / 普 / 困三档分开的累计统计。</p>
 <div class="tutorial-figure" aria-hidden="true"><svg width="240" height="88" viewBox="0 0 240 88" xmlns="http://www.w3.org/2000/svg">
-  <text x="120" y="28" text-anchor="middle" fill="#8ab4e8" font-size="12" font-weight="900" font-family="Nunito,sans-serif">⏱ 回合上限 · 和棋</text>
-  <text x="120" y="52" text-anchor="middle" fill="#c4ddf5" font-size="11" font-weight="700">防长时间僵持无结果</text>
-  <text x="120" y="76" text-anchor="middle" fill="#7aa8e0" font-size="10" font-weight="700">简 / 普 / 困 分开累计胜场</text>
+  <text x="120" y="28" text-anchor="middle" fill="#8ab4e8" font-size="12" font-weight="900" font-family="Nunito,sans-serif">📊 胜负在歼灭对方领地时结算</text>
+  <text x="120" y="52" text-anchor="middle" fill="#c4ddf5" font-size="11" font-weight="700">换设备或清除站点数据会丢失记录</text>
+  <text x="120" y="76" text-anchor="middle" fill="#7aa8e0" font-size="10" font-weight="700">可用「清零」重置各难度累计</text>
 </svg></div>
 <p>更多细则（例如溢出优先级）随时可点<strong>「游戏说明」</strong>查阅。</p>`
   },
